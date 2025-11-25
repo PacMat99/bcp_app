@@ -21,16 +21,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
+  final _cfClientIdController = TextEditingController();
+  final _cfClientSecretController = TextEditingController();
+
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final serverUrl = prefs.getString('server_url') ?? 'http://192.168.1.100:5000';
-    
+    final serverUrl = prefs.getString('server_url') ?? 'https://api.pacsbrothers.com';
+    final cfClientId = prefs.getString('cf_client_id') ?? '';
+    final cfClientSecret = prefs.getString('cf_client_secret') ?? '';
+
     setState(() {
       _serverUrlController.text = serverUrl;
+      _cfClientIdController.text = cfClientId;
+      _cfClientSecretController.text = cfClientSecret;
     });
 
     final apiService = context.read<ApiService>();
     apiService.setBaseUrl(serverUrl);
+    if (cfClientId.isNotEmpty && cfClientSecret.isNotEmpty) {
+      apiService.setCloudflareCredentials(cfClientId, cfClientSecret);
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -44,6 +54,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Impostazioni salvate'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveCfCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('cf_client_id', _cfClientIdController.text);
+    await prefs.setString('cf_client_secret', _cfClientSecretController.text);
+
+    final apiService = context.read<ApiService>();
+    apiService.setCloudflareCredentials(
+      _cfClientIdController.text,
+      _cfClientSecretController.text,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Credenziali Cloudflare salvate'),
           backgroundColor: Colors.green,
         ),
       );
@@ -161,6 +192,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
+
+          // Credentials settings
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.security,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Cloudflare Access',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _cfClientIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'CF-Access-Client-Id',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.vpn_key),
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _cfClientSecretController,
+                    decoration: const InputDecoration(
+                      labelText: 'CF-Access-Client-Secret',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.password),
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _saveCfCredentials,
+                    icon: const Icon(Icons.save),
+                    label: const Text('Salva Credenziali'),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           // App Info
           Card(
