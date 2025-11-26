@@ -14,7 +14,7 @@ class _BikeConfigScreenState extends State<BikeConfigScreen> {
   BikeType _selectedBikeType = BikeType.hardtail;
   double _frontWheelSize = 29.0;
   double _rearWheelSize = 29.0;
-  double _forkTravel = 120.0;
+  double _forkTravel = 150.0;
   double _shockTravel = 130.0;
 
   final List<double> _wheelSizes = [26.0, 27.5, 29.0];
@@ -35,7 +35,7 @@ class _BikeConfigScreenState extends State<BikeConfigScreen> {
         _selectedBikeType = config.bikeType;
         _frontWheelSize = config.frontWheelSize;
         _rearWheelSize = config.rearWheelSize;
-        _forkTravel = config.forkTravel ?? 120.0;
+        _forkTravel = config.forkTravel ?? 150.0;
         _shockTravel = config.shockTravel ?? 130.0;
       });
     }
@@ -112,7 +112,7 @@ class _BikeConfigScreenState extends State<BikeConfigScreen> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: DropdownButtonFormField<BikeType>(
-                  value: _selectedBikeType,
+                  initialValue: _selectedBikeType,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     icon: Icon(Icons.bike_scooter),

@@ -13,11 +13,14 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _serverUrlController = TextEditingController();
   bool _isTestingConnection = false;
-  bool? _connectionStatus;
+  String _connectionStatus = 'Non testato';
+  late ApiService _apiService;
+
 
   @override
   void initState() {
     super.initState();
+    _apiService = context.read<ApiService>();
     _loadSettings();
   }
 
@@ -84,18 +87,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _testConnection() async {
     setState(() {
       _isTestingConnection = true;
-      _connectionStatus = null;
+      _connectionStatus = 'Testing...';
     });
 
-    final apiService = context.read<ApiService>();
-    apiService.setBaseUrl(_serverUrlController.text);
+    final result = await _apiService.testConnection();
     
-    final success = await apiService.testConnection();
-
     setState(() {
       _isTestingConnection = false;
-      _connectionStatus = success;
+      
+      if (result['success'] == true) {
+        _connectionStatus = '✅ ${result['message']}';
+      } else {
+        _connectionStatus = '❌ ${result['message']}';
+        _showErrorDialog(result);
+      }
     });
+  }
+
+  void _showErrorDialog(Map<String, dynamic> error) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Errore Connessione'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Errore: ${error['error'] ?? 'Sconosciuto'}'),
+              const SizedBox(height: 8),
+              Text('Messaggio: ${error['message']}'),
+              if (error['statusCode'] != null)
+                Text('Status Code: ${error['statusCode']}'),
+              if (error['details'] != null) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Dettagli:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(error['details'].toString()),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -132,19 +174,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _serverUrlController,
                     decoration: InputDecoration(
                       labelText: 'URL Server Raspberry Pi',
-                      hintText: 'http://192.168.1.100:5000',
+                      hintText: 'http://api.domain.com',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.link),
-                      suffixIcon: _connectionStatus != null
-                          ? Icon(
-                              _connectionStatus! 
-                                  ? Icons.check_circle 
-                                  : Icons.error,
-                              color: _connectionStatus! 
-                                  ? Colors.green 
-                                  : Colors.red,
-                            )
-                          : null,
+                      suffixIcon: _connectionStatus != 'Non testato'
+                        ? Icon(
+                            _connectionStatus.startsWith('✅') 
+                                ? Icons.check_circle 
+                                : Icons.error,
+                            color: _connectionStatus.startsWith('✅') 
+                                ? Colors.green 
+                                : Colors.red,
+                          )
+                        : null,
                     ),
                     keyboardType: TextInputType.url,
                   ),
@@ -174,15 +216,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
-                  if (_connectionStatus != null)
+                  if (_connectionStatus != 'Non testato')
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
                       child: Text(
-                        _connectionStatus!
-                            ? '✓ Server raggiungibile'
-                            : '✗ Server non raggiungibile',
+                        _connectionStatus,  // ← Mostra direttamente il messaggio
                         style: TextStyle(
-                          color: _connectionStatus! ? Colors.green : Colors.red,
+                          color: _connectionStatus.startsWith('✅') 
+                              ? Colors.green 
+                              : Colors.red,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -339,6 +381,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _serverUrlController.dispose();
+    _cfClientIdController.dispose();
+    _cfClientSecretController.dispose();
     super.dispose();
   }
 }
