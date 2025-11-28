@@ -5,8 +5,6 @@ import 'package:path_provider/path_provider.dart';
 import '../services/ble_service.dart';
 import '../services/api_service.dart';
 import '../models/file_info.dart';
-import '../models/bike_config.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class FileManagerScreen extends StatefulWidget {
   const FileManagerScreen({super.key});
@@ -137,21 +135,6 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       return;
     }
 
-    // Carica configurazione bici
-    final prefs = await SharedPreferences.getInstance();
-    final bikeConfigJson = prefs.getString('bike_config');
-    
-    BikeConfig bikeConfig;
-    if (bikeConfigJson != null) {
-      bikeConfig = BikeConfig.fromJson({'bike_type': bikeConfigJson});
-    } else {
-      bikeConfig = BikeConfig(
-        bikeType: BikeType.hardtail,
-        frontWheelSize: 29.0,
-        rearWheelSize: 29.0,
-      );
-    }
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -170,16 +153,17 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     final apiService = context.read<ApiService>();
     final success = await apiService.uploadFile(
       file: File(file.localPath!),
-      bikeConfig: bikeConfig,
       sessionName: file.name,
     );
 
     if (mounted) {
       Navigator.pop(context);
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'File inviato con successo' : 'Errore invio'),
+          content: Text(success 
+              ? 'File e configurazione inviati con successo' 
+              : 'Errore invio'),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );

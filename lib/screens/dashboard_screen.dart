@@ -8,6 +8,10 @@ import 'bike_config_screen.dart';
 import 'esp32_config_screen.dart';
 import 'realtime_preview_screen.dart';
 import 'settings_screen.dart';
+import 'fork_config_screen.dart';
+import 'shock_config_screen.dart';
+import 'wheel_config_screen.dart';
+import 'config_summary_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -67,6 +71,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Bike Comfort Project'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.summarize),
+            tooltip: 'Riepilogo Config',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ConfigSummaryScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
@@ -300,81 +316,125 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Menu funzioni
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              children: [
-                _buildMenuCard(
-                  icon: Icons.folder_open,
-                  title: 'Gestione File',
-                  subtitle: 'SD Card ESP32',
-                  accentColor: const Color(0xFF9C27B0),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FileManagerScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuCard(
-                  icon: Icons.directions_bike,
-                  title: 'Configurazione',
-                  subtitle: 'Setup Bici',
-                  accentColor: const Color(0xFFE040FB),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BikeConfigScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuCard(
-                  icon: Icons.memory,
-                  title: 'Setup Hardware',
-                  subtitle: 'Config ESP32',
-                  accentColor: const Color(0xFF00BCD4),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const Esp32ConfigScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuCard(
-                  icon: Icons.show_chart,
-                  title: 'Preview Live',
-                  subtitle: 'Dati Sensori',
-                  accentColor: const Color(0xFF00BCD4),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RealtimePreviewScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildMenuCard(
-                  icon: Icons.info_outline,
-                  title: 'Info Sistema',
-                  subtitle: 'Stato ESP32',
-                  accentColor: const Color(0xFFAB47BC),
-                  onTap: () {
-                    _showSystemInfo();
-                  },
-                ),
-              ],
+// Menu funzioni
+Expanded(
+  child: GridView.count(
+    crossAxisCount: 2,
+    mainAxisSpacing: 16,
+    crossAxisSpacing: 16,
+    childAspectRatio: 0.85, // Regola altezza card
+    children: [
+      _buildMenuCard(
+        icon: Icons.folder_open,
+        title: 'Gestione File',
+        subtitle: 'SD Card ESP32',
+        accentColor: const Color(0xFF9C27B0),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FileManagerScreen(),
             ),
-          ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        icon: Icons.directions_bike,
+        title: 'Setup Bici',
+        subtitle: 'Tipo e ruote',
+        accentColor: const Color(0xFFE040FB),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BikeConfigScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        icon: Icons.settings_input_component,
+        title: 'Forcella',
+        subtitle: 'Setup anteriore',
+        accentColor: const Color(0xFF9C27B0),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ForkConfigScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        icon: Icons.published_with_changes,
+        title: 'Ammortizzatore',
+        subtitle: 'Setup posteriore',
+        accentColor: const Color(0xFFE040FB),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ShockConfigScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        icon: Icons.album,
+        title: 'Ruote',
+        subtitle: 'Cerchi e gomme',
+        accentColor: const Color(0xFF00BCD4),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const WheelConfigScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        icon: Icons.memory,
+        title: 'Hardware',
+        subtitle: 'Config ESP32',
+        accentColor: const Color(0xFF00BCD4),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const Esp32ConfigScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        icon: Icons.show_chart,
+        title: 'Preview Live',
+        subtitle: 'Dati Sensori',
+        accentColor: const Color(0xFF9C27B0),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const RealtimePreviewScreen(),
+            ),
+          );
+        },
+      ),
+      _buildMenuCard(
+        icon: Icons.info_outline,
+        title: 'Info Sistema',
+        subtitle: 'Stato ESP32',
+        accentColor: const Color(0xFFAB47BC),
+        onTap: () {
+          _showSystemInfo();
+        },
+      ),
+    ],
+  ),
+),
+
         ],
       ),
     );

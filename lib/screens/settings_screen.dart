@@ -13,9 +13,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final _serverUrlController = TextEditingController();
   bool _isTestingConnection = false;
-  String _connectionStatus = 'Non testato';
+  bool? _connectionStatus;
   late ApiService _apiService;
-
 
   @override
   void initState() {
@@ -87,57 +86,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _testConnection() async {
     setState(() {
       _isTestingConnection = true;
-      _connectionStatus = 'Testing...';
+      _connectionStatus = null;
     });
 
-    final result = await _apiService.testConnection();
-    
+    final apiService = context.read<ApiService>();
+    apiService.setBaseUrl(_serverUrlController.text);
+
+    final success = await apiService.testConnection();
+
     setState(() {
       _isTestingConnection = false;
-      
-      if (result['success'] == true) {
-        _connectionStatus = '✅ ${result['message']}';
-      } else {
-        _connectionStatus = '❌ ${result['message']}';
-        _showErrorDialog(result);
-      }
+      _connectionStatus = success;
     });
-  }
-
-  void _showErrorDialog(Map<String, dynamic> error) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Errore Connessione'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Errore: ${error['error'] ?? 'Sconosciuto'}'),
-              const SizedBox(height: 8),
-              Text('Messaggio: ${error['message']}'),
-              if (error['statusCode'] != null)
-                Text('Status Code: ${error['statusCode']}'),
-              if (error['details'] != null) ...[
-                const SizedBox(height: 8),
-                const Text(
-                  'Dettagli:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(error['details'].toString()),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -177,12 +137,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       hintText: 'http://api.domain.com',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.link),
-                      suffixIcon: _connectionStatus != 'Non testato'
+                      suffixIcon: _connectionStatus != null
                         ? Icon(
-                            _connectionStatus.startsWith('✅') 
+                            _connectionStatus! 
                                 ? Icons.check_circle 
                                 : Icons.error,
-                            color: _connectionStatus.startsWith('✅') 
+                            color: _connectionStatus! 
                                 ? Colors.green 
                                 : Colors.red,
                           )
@@ -216,15 +176,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
-                  if (_connectionStatus != 'Non testato')
+                  if (_connectionStatus != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
                       child: Text(
-                        _connectionStatus,  // ← Mostra direttamente il messaggio
+                        _connectionStatus!
+                            ? 'Server raggiungibile'
+                            : 'Server non raggiungibile',
                         style: TextStyle(
-                          color: _connectionStatus.startsWith('✅') 
-                              ? Colors.green 
-                              : Colors.red,
+                          color: _connectionStatus!
+                            ? Colors.green
+                            : Colors.red,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
