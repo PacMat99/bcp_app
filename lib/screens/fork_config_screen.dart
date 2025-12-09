@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/fork_config.dart';
 import '../models/suspension_types.dart';
+import '../theme/app_theme.dart';
 
 class ForkConfigScreen extends StatefulWidget {
   const ForkConfigScreen({super.key});
@@ -67,8 +68,8 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Configurazione forcella salvata'),
-          backgroundColor: Colors.green,
+          content: Text('Fork configuration saved'),
+          backgroundColor: AppTheme.success,
         ),
       );
       Navigator.pop(context);
@@ -77,9 +78,13 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurazione Forcella'),
+        title: const Text('Fork Configuration'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -88,7 +93,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
           children: [
             // Header
             Card(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              color: colorScheme.primaryContainer,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -96,7 +101,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                     Icon(
                       Icons.settings_input_component,
                       size: 48,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      color: colorScheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -104,16 +109,16 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Setup Forcella',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            'Fork Setup',
+                            style: textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            'Configura i parametri della forcella anteriore',
+                            'Configure fork parameters',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                              color: colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ],
@@ -123,27 +128,24 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Informazioni Generali
             Text(
-              'Informazioni Generali',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
+              'General Info',
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
 
-            // Nome Forcella
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Modello Forcella',
-                hintText: 'es. RockShox Pike Ultimate',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                prefixIcon: const Icon(Icons.label),
+                labelText: 'Fork Model',
+                hintText: 'eg. Cane Creek MKII',
+                prefixIcon: Icon(Icons.label),
               ),
             ),
             const SizedBox(height: 16),
@@ -158,11 +160,11 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Escursione'),
+                        const Text('Travel'),
                         Text(
                           '$_travel mm',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
+                          style: textTheme.titleLarge?.copyWith(
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -193,7 +195,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Tipo di Molla'),
+                    const Text('Spring Type'),
                     const SizedBox(height: 12),
                     SegmentedButton<SpringType>(
                       segments: SpringType.values.map((type) {
@@ -214,13 +216,13 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Setup
             Text(
               'Setup',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.primary,
               ),
             ),
             const SizedBox(height: 12),
@@ -302,12 +304,13 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
             FilledButton.icon(
               onPressed: _saveConfig,
               icon: const Icon(Icons.save),
-              label: const Text('Salva Configurazione'),
+              label: const Text('SAVE SETUP'),
+              // Rimosso backgroundColor hardcoded: ora usa il Tech Blue del tema
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(16),
-                backgroundColor: const Color(0xFF9C27B0),
               ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -322,6 +325,10 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
     double max,
     Function(double) onChanged,
   ) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -329,19 +336,19 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
           children: [
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
             Text(
               value.toStringAsFixed(0),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
+              style: textTheme.headlineMedium?.copyWith(
+                color: colorScheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
               unit,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: textTheme.bodySmall,
             ),
             Slider(
               value: value,
@@ -362,6 +369,10 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
     Function(int) onChanged,
     {int max = 20}
   ) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -369,19 +380,19 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
           children: [
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
             Text(
               '$value',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
+              style: textTheme.headlineMedium?.copyWith(
+                color: colorScheme.secondary,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
               'Clicks',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
             Row(

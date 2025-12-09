@@ -114,9 +114,9 @@ extension RimMaterialExtension on RimMaterial {
   String get displayName {
     switch (this) {
       case RimMaterial.aluminum:
-        return 'Alluminio';
+        return 'Aluminum';
       case RimMaterial.carbon:
-        return 'Carbonio';
+        return 'Carbon';
     }
   }
 }
@@ -131,11 +131,11 @@ extension TireSetupExtension on TireSetup {
   String get displayName {
     switch (this) {
       case TireSetup.tube:
-        return 'Camera d\'aria';
+        return 'Inner Tube';
       case TireSetup.tubeless:
         return 'Tubeless';
       case TireSetup.insert:
-        return 'Inserto';
+        return 'Insert';
     }
   }
 }

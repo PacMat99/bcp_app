@@ -105,8 +105,7 @@ class _ConfigSummaryWidgetState extends State<ConfigSummaryWidget> {
 
   String _formatConfig(dynamic config) {
     if (config is BikeConfig) {
-      return 'Tipo: ${config.bikeType.displayName}\n'
-             'Ruote: ${config.frontWheelSize}" / ${config.rearWheelSize}"';
+      return 'Tipo: ${config.bikeType.displayName}\n';
     } else if (config is ForkConfig) {
       return '${config.name}\n'
              'Escursione: ${config.travel}mm\n'
@@ -116,7 +115,8 @@ class _ConfigSummaryWidgetState extends State<ConfigSummaryWidget> {
              'Escursione: ${config.travel}mm\n'
              'Sag: ${config.sag.toStringAsFixed(0)}% | Pressione: ${config.pressure.toStringAsFixed(0)} PSI';
     } else if (config is WheelConfig) {
-      return 'Cerchi: ${config.rimModel} (${config.rimMaterial.displayName})\n'
+      return 'Ruote: ${config.frontTire.size}" / ${config.rearTire.size}"'
+             'Cerchi: ${config.rimModel} (${config.rimMaterial.displayName})\n'
              'Ant: ${config.frontTire.model}\n'
              'Post: ${config.rearTire.model}';
     } else if (config is Esp32Config) {

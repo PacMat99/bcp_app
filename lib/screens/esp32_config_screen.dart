@@ -126,7 +126,7 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Info sensori connessi
             Text(

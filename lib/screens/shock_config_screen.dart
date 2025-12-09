@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/shock_config.dart';
 import '../models/suspension_types.dart';
+import '../theme/app_theme.dart';
 
 class ShockConfigScreen extends StatefulWidget {
   const ShockConfigScreen({super.key});
@@ -67,8 +68,8 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Configurazione ammortizzatore salvata'),
-          backgroundColor: Colors.green,
+          content: Text('Shock configuration saved'),
+          backgroundColor: AppTheme.success,
         ),
       );
       Navigator.pop(context);
@@ -77,18 +78,22 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurazione Ammortizzatore'),
+        title: const Text('Shock Configuration'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header - Stile coerente con Bike e Wheel config
             Card(
-              color: Theme.of(context).colorScheme.secondaryContainer,
+              color: colorScheme.primaryContainer,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -96,7 +101,8 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                     Icon(
                       Icons.published_with_changes,
                       size: 48,
-                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                      // Correzione: Usa onPrimaryContainer su sfondo primaryContainer
+                      color: colorScheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -104,16 +110,16 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Setup Ammortizzatore',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSecondaryContainer,
+                            'Shock Setup',
+                            style: textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            'Configura i parametri dell\'ammortizzatore posteriore',
+                            'Configure shock parameters',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
+                              color: colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ],
@@ -123,30 +129,29 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Stesso layout della forcella ma con valori per shock
+            // Sezione Info
             Text(
-              'Informazioni Generali',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
+              'General Info',
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.primary, // Slate Dark
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
 
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Modello Ammortizzatore',
-                hintText: 'es. Fox Float X2',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                prefixIcon: const Icon(Icons.label),
+              decoration: const InputDecoration(
+                labelText: 'Shock Model',
+                hintText: 'eg. Marzocchi Bomber CR',
+                prefixIcon: Icon(Icons.label),
               ),
             ),
             const SizedBox(height: 16),
 
+            // Card Travel
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -156,11 +161,11 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Escursione'),
+                        const Text('Travel'),
                         Text(
                           '$_travel mm',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
+                          style: textTheme.headlineSmall?.copyWith(
+                            color: colorScheme.secondary, // Tech Blue
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -184,43 +189,50 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Tipo Molla
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Tipo di Molla'),
+                    const Text('Spring Type'),
                     const SizedBox(height: 12),
-                    SegmentedButton<SpringType>(
-                      segments: SpringType.values.map((type) {
-                        return ButtonSegment(
-                          value: type,
-                          label: Text(type.displayName),
-                          icon: Icon(type == SpringType.air ? Icons.air : Icons.water_drop),
-                        );
-                      }).toList(),
-                      selected: {_springType},
-                      onSelectionChanged: (Set<SpringType> newSelection) {
-                        setState(() {
-                          _springType = newSelection.first;
-                        });
-                      },
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<SpringType>(
+                        segments: SpringType.values.map((type) {
+                          return ButtonSegment(
+                            value: type,
+                            label: Text(type.displayName),
+                            icon: Icon(type == SpringType.air ? Icons.air : Icons.water_drop),
+                          );
+                        }).toList(),
+                        selected: {_springType},
+                        onSelectionChanged: (Set<SpringType> newSelection) {
+                          setState(() {
+                            _springType = newSelection.first;
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
+            // Setup
             Text(
               'Setup',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
 
+            // Sag & Pressure in grid
             Row(
               children: [
                 Expanded(
@@ -236,7 +248,7 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildSettingCard(
-                    'Pressure',
+                    'Pressure', // Tradotto
                     _pressure,
                     'PSI',
                     100,
@@ -269,6 +281,7 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
             ),
             const SizedBox(height: 12),
 
+            // Rebound & Tokens
             Row(
               children: [
                 Expanded(
@@ -291,15 +304,17 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
             ),
             const SizedBox(height: 32),
 
+            // Bottone Salva
             FilledButton.icon(
               onPressed: _saveConfig,
               icon: const Icon(Icons.save),
-              label: const Text('Salva Configurazione'),
+              label: const Text('SAVE SETUP'),
+              // Rimosso backgroundColor hardcoded: ora usa il Tech Blue del tema
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(16),
-                backgroundColor: const Color(0xFFE040FB),
               ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -314,26 +329,32 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
     double max,
     Function(double) onChanged,
   ) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(label, style: textTheme.bodyMedium),
             const SizedBox(height: 8),
-            Text(
-              value.toStringAsFixed(0),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              unit,
-              style: Theme.of(context).textTheme.bodySmall,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value.toStringAsFixed(0),
+                  style: textTheme.headlineMedium?.copyWith(
+                    color: colorScheme.secondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(unit, style: textTheme.bodySmall),
+              ],
             ),
             Slider(
               value: value,
@@ -354,27 +375,25 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
     Function(int) onChanged,
     {int max = 20}
   ) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(label, style: textTheme.bodyMedium),
             const SizedBox(height: 8),
             Text(
               '$value',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: const Color(0xFFE040FB),
+              style: textTheme.headlineMedium?.copyWith(
+                color: colorScheme.secondary,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              'Clicks',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text('Clicks', style: textTheme.bodySmall),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -382,11 +401,17 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                 IconButton(
                   onPressed: value > 0 ? () => onChanged(value - 1) : null,
                   icon: const Icon(Icons.remove_circle_outline),
+                  color: colorScheme.secondary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 16),
                 IconButton(
                   onPressed: value < max ? () => onChanged(value + 1) : null,
                   icon: const Icon(Icons.add_circle_outline),
+                  color: colorScheme.secondary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),
