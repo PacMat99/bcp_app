@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'MTB Telemetry',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme, // <--- ECCO LA MAGIA
+        theme: AppTheme.lightTheme,
         home: const DashboardScreen(),
       ),
     );

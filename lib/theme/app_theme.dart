@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // PALETTE "PRECISION ENGINEERING"
-  // Ispirata alla strumentazione tecnica (Garmin, Strumenti di misura)
+  // PALETTE "ELECTRIC VELOCITY"
+  // Look moderno, sportivo e ad alto contrasto per l'outdoor.
   
-  // 1. Primary: Slate Blue (Struttura, Testi importanti)
-  static const Color slateDark = Color(0xFF263238); 
+  // 1. Primary: Midnight Blue
+  // Sostituisce il grigio ardesia. È scuro abbastanza per il testo su bianco,
+  // ma ha una tonalità blu che lo rende più "tech".
+  static const Color primaryDark = Color(0xFF0D1B2A); 
   
-  // 2. Action: Tech Blue (Interazione, Bottoni, Slider attivi)
-  static const Color techBlue = Color(0xFF0277BD); 
+  // 2. Action: Vivid Blue
+  // Un blu più saturo e luminoso rispetto al vecchio "Tech Blue".
+  // Cattura l'occhio sotto il sole.
+  static const Color actionBlue = Color(0xFF2962FF); 
   
-  // 3. Accent: Safety Orange (Focus, Dati critici, Selection)
-  static const Color safetyOrange = Color(0xFFEF6C00);
+  // 3. Accent: Electric Cyan
+  // Per dettagli che devono "poppare" fuori.
+  static const Color accentCyan = Color(0xFF00B0FF);
   
-  // 4. Backgrounds
-  static const Color background = Color(0xFFFFFFFF); // Bianco puro per visibilità outdoor
-  static const Color surface = Color(0xFFF5F7FA);   // Grigio ghiaccio per le aree contenitore
+  // 4. Sfondi
+  static const Color background = Color(0xFFFFFFFF); // Bianco Puro (Indispensabile outdoor)
+  static const Color surface = Color(0xFFF0F2F5);   // Grigio ghiaccio chiarissimo (moderno)
   
-  // 5. Semantic
-  static const Color error = Color(0xFFD32F2F);
-  static const Color success = Color(0xFF388E3C);
+  // 5. Semantic Colors (Più vivaci)
+  static const Color error = Color(0xFFD50000); // Rosso acceso
+  static const Color success = Color(0xFF00C853); // Verde traffico
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -30,103 +35,138 @@ class AppTheme {
       // Definisce la palette globale
       colorScheme: const ColorScheme(
         brightness: Brightness.light,
-        primary: slateDark,
+        
+        // Colori Principali
+        primary: primaryDark,
         onPrimary: Colors.white,
-        secondary: techBlue,
+        
+        // Colori Secondari (Azioni)
+        secondary: actionBlue,
         onSecondary: Colors.white,
-        tertiary: safetyOrange,
-        onTertiary: Colors.white,
+        
+        // Colori Terziari (Accent)
+        tertiary: accentCyan,
+        onTertiary: Colors.black, // Testo nero sul ciano per leggibilità
+        
+        // Stati
         error: error,
         onError: Colors.white,
+        
+        // Superfici
         surface: surface,
-        onSurface: slateDark,
-        surfaceContainerHighest: Color(0xFFECEFF1), // Per elementi disattivati o sfondi alternativi
+        onSurface: primaryDark,
+        
+        // Colore per sfondi alternativi (es. header box)
+        primaryContainer: primaryDark, 
+        onPrimaryContainer: Colors.white,
+        
+        // Container secondari (es. selezione bike type)
+        secondaryContainer: Color(0xFFE3F2FD), // Azzurro chiarissimo
+        onSecondaryContainer: actionBlue,
+        
+        // Bordi e linee
+        outline: Color(0xFFB0BEC5),
+        surfaceContainerHighest: Color(0xFFE0E0E0), // Grigio medio per i box non attivi
       ),
 
-      // AppBar tecnica e pulita
+      // AppBar
       appBarTheme: const AppBarTheme(
-        backgroundColor: slateDark,
-        foregroundColor: Colors.white,
+        backgroundColor: background, // AppBar bianca per look "Clean"
+        foregroundColor: primaryDark, // Titolo scuro
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
-          fontSize: 20, 
-          fontWeight: FontWeight.w600, 
-          letterSpacing: 0.5,
-          fontFamily: 'Roboto', // O il tuo font preferito
+          color: primaryDark,
+          fontSize: 22, 
+          fontWeight: FontWeight.w700, // Più grassetto = più moderno
+          letterSpacing: -0.5,
+          fontFamily: 'Roboto', 
         ),
+        iconTheme: IconThemeData(color: primaryDark),
       ),
 
-      // Card: Stile "Blocco Dati"
+      // Card: Più definite
       cardTheme: CardThemeData(
         color: Colors.white,
-        elevation: 0, // Flat design
+        elevation: 2, // Leggera ombra per staccare dal fondo "ghiaccio"
+        shadowColor: Colors.black.withOpacity(0.1), // Ombra morbida
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8), // Angoli meno stondati = più tecnico
-          side: const BorderSide(color: Color(0xFFE0E0E0), width: 1), // Bordo sottile
+          borderRadius: BorderRadius.circular(16), // Arrotondamento moderno
+          side: BorderSide.none, // Niente bordo, usiamo l'ombra
         ),
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
       ),
 
       // Input Fields
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surface,
-        labelStyle: const TextStyle(color: Color(0xFF546E7A)),
+        fillColor: Colors.white,
+        labelStyle: const TextStyle(color: Color(0xFF607D8B)),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFCFD8DC)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: techBlue, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: actionBlue, width: 2),
         ),
-        prefixIconColor: techBlue,
+        prefixIconColor: actionBlue,
       ),
 
       // Bottoni
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: techBlue,
+          backgroundColor: actionBlue,
           foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 4, // Bottone "floating" che invita al click
+          shadowColor: actionBlue.withOpacity(0.4), // Ombra colorata (molto moderno)
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
       ),
 
-      // Segmented Buttons (Molto usati nei tuoi config)
+      // Segmented Buttons
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
-            if (states.contains(MaterialState.selected)) return techBlue;
-            return null;
+            if (states.contains(MaterialState.selected)) return actionBlue;
+            return Colors.white;
           }),
           foregroundColor: MaterialStateProperty.resolveWith<Color?>((states) {
             if (states.contains(MaterialState.selected)) return Colors.white;
-            return slateDark;
+            return primaryDark;
           }),
-          side: MaterialStateProperty.all(const BorderSide(color: techBlue)),
+          side: MaterialStateProperty.all(const BorderSide(color: Color(0xFFCFD8DC))), // Bordo grigio chiaro
+          elevation: MaterialStateProperty.resolveWith<double>((states) {
+             if (states.contains(MaterialState.selected)) return 2;
+             return 0;
+          }),
         ),
       ),
 
       // Slider
       sliderTheme: SliderThemeData(
-        activeTrackColor: techBlue,
-        inactiveTrackColor: const Color(0xFFCFD8DC),
-        thumbColor: safetyOrange, // Il "cursore" arancione aumenta la visibilità
-        overlayColor: safetyOrange,
-        trackHeight: 4,
+        activeTrackColor: actionBlue,
+        inactiveTrackColor: const Color(0xFFE0E0E0),
+        thumbColor: primaryDark, // Cursore scuro per contrasto
+        overlayColor: actionBlue.withOpacity(0.1),
+        trackHeight: 6,
       ),
       
-      // Icone
+      // Icone generali
       iconTheme: const IconThemeData(
-        color: techBlue,
+        color: actionBlue,
+      ),
+      
+      // Floating Action Button (se lo userai)
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: actionBlue,
+        foregroundColor: Colors.white,
       ),
     );
   }

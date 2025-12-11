@@ -99,9 +99,8 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.published_with_changes,
+                      Icons.height,
                       size: 48,
-                      // Correzione: Usa onPrimaryContainer su sfondo primaryContainer
                       color: colorScheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: 16),
@@ -135,7 +134,7 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
             Text(
               'General Info',
               style: textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary, // Slate Dark
+                color: colorScheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -145,7 +144,7 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText: 'Shock Model',
-                hintText: 'eg. Marzocchi Bomber CR',
+                hintText: 'eg. Cane Creek Coil IL',
                 prefixIcon: Icon(Icons.label),
               ),
             ),
@@ -165,7 +164,7 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                         Text(
                           '$_travel mm',
                           style: textTheme.headlineSmall?.copyWith(
-                            color: colorScheme.secondary, // Tech Blue
+                            color: colorScheme.secondary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -248,7 +247,7 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildSettingCard(
-                    'Pressure', // Tradotto
+                    'Pressure',
                     _pressure,
                     'PSI',
                     100,
@@ -260,6 +259,7 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
             ),
             const SizedBox(height: 12),
 
+            // HSC & LSC
             Row(
               children: [
                 Expanded(
@@ -309,7 +309,6 @@ class _ShockConfigScreenState extends State<ShockConfigScreen> {
               onPressed: _saveConfig,
               icon: const Icon(Icons.save),
               label: const Text('SAVE SETUP'),
-              // Rimosso backgroundColor hardcoded: ora usa il Tech Blue del tema
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(16),
               ),

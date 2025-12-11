@@ -109,7 +109,7 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header - Stile coerente con Bike config
             Card(
               color: colorScheme.primaryContainer,
               child: Padding(
@@ -117,7 +117,7 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.album, // Icona Ruote
+                      Icons.tire_repair, // Icona Ruote
                       size: 48,
                       color: colorScheme.onPrimaryContainer,
                     ),
@@ -136,7 +136,7 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
                           Text(
                             'Wheels and Tires',
                             style: TextStyle(
-                              color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                              color: colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ],
@@ -148,11 +148,11 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Cerchi
+            // Sezione Info
             Text(
-              'Wheels',
+              'General Info',
               style: textTheme.titleLarge?.copyWith(
-                color: colorScheme.primary, // Usa colore tema
+                color: colorScheme.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -160,15 +160,15 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
 
             TextField(
               controller: _rimModelController,
-              decoration: const InputDecoration( // Stile definito nel tema
+              decoration: const InputDecoration(
                 labelText: 'Rims Model',
-                hintText: 'eg. DT Swiss XM 1700',
+                hintText: 'eg. Damil Flow MK4',
                 prefixIcon: Icon(Icons.album_outlined),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Materiale Cerchi - Card standard
+            // Materiale Cerchi
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -269,7 +269,7 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Bottone Salva - STILE AGGIORNATO: Usa stile tema
+            // Bottone Salva
             FilledButton.icon(
               onPressed: _saveConfig,
               icon: const Icon(Icons.save),
@@ -279,7 +279,7 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
                 // Il colore background è gestito dal tema
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
           ],
         ),
       ),

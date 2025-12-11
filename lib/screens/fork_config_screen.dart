@@ -91,7 +91,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header - Stile coerente con Bike e Wheel config
             Card(
               color: colorScheme.primaryContainer,
               child: Padding(
@@ -99,7 +99,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.settings_input_component,
+                      Icons.compress,
                       size: 48,
                       color: colorScheme.onPrimaryContainer,
                     ),
@@ -130,7 +130,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Informazioni Generali
+            // Sezione Info
             Text(
               'General Info',
               style: textTheme.titleLarge?.copyWith(
@@ -142,7 +142,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
 
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Fork Model',
                 hintText: 'eg. Cane Creek MKII',
                 prefixIcon: Icon(Icons.label),
@@ -150,7 +150,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Escursione
+            // Card Travel
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -163,8 +163,8 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                         const Text('Travel'),
                         Text(
                           '$_travel mm',
-                          style: textTheme.titleLarge?.copyWith(
-                            color: colorScheme.primary,
+                          style: textTheme.headlineSmall?.copyWith(
+                            color: colorScheme.secondary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -197,20 +197,23 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                   children: [
                     const Text('Spring Type'),
                     const SizedBox(height: 12),
-                    SegmentedButton<SpringType>(
-                      segments: SpringType.values.map((type) {
-                        return ButtonSegment(
-                          value: type,
-                          label: Text(type.displayName),
-                          icon: Icon(type == SpringType.air ? Icons.air : Icons.water_drop),
-                        );
-                      }).toList(),
-                      selected: {_springType},
-                      onSelectionChanged: (Set<SpringType> newSelection) {
-                        setState(() {
-                          _springType = newSelection.first;
-                        });
-                      },
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<SpringType>(
+                        segments: SpringType.values.map((type) {
+                          return ButtonSegment(
+                            value: type,
+                            label: Text(type.displayName),
+                            icon: Icon(type == SpringType.air ? Icons.air : Icons.water_drop),
+                          );
+                        }).toList(),
+                        selected: {_springType},
+                        onSelectionChanged: (Set<SpringType> newSelection) {
+                          setState(() {
+                            _springType = newSelection.first;
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -223,6 +226,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
               'Setup',
               style: textTheme.titleLarge?.copyWith(
                 color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
@@ -305,7 +309,6 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
               onPressed: _saveConfig,
               icon: const Icon(Icons.save),
               label: const Text('SAVE SETUP'),
-              // Rimosso backgroundColor hardcoded: ora usa il Tech Blue del tema
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(16),
               ),
@@ -334,21 +337,23 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
-              label,
-              style: textTheme.bodySmall,
-            ),
+            Text(label, style: textTheme.bodyMedium),
             const SizedBox(height: 8),
-            Text(
-              value.toStringAsFixed(0),
-              style: textTheme.headlineMedium?.copyWith(
-                color: colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              unit,
-              style: textTheme.bodySmall,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value.toStringAsFixed(0),
+                  style: textTheme.headlineMedium?.copyWith(
+                    color: colorScheme.secondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(unit, style: textTheme.bodySmall),
+              ],
             ),
             Slider(
               value: value,
@@ -378,10 +383,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text(
-              label,
-              style: textTheme.bodySmall,
-            ),
+            Text(label, style: textTheme.bodyMedium),
             const SizedBox(height: 8),
             Text(
               '$value',
@@ -390,10 +392,7 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              'Clicks',
-              style: textTheme.bodySmall,
-            ),
+            Text('Clicks', style: textTheme.bodySmall),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -401,11 +400,17 @@ class _ForkConfigScreenState extends State<ForkConfigScreen> {
                 IconButton(
                   onPressed: value > 0 ? () => onChanged(value - 1) : null,
                   icon: const Icon(Icons.remove_circle_outline),
+                  color: colorScheme.secondary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 16),
                 IconButton(
                   onPressed: value < max ? () => onChanged(value + 1) : null,
                   icon: const Icon(Icons.add_circle_outline),
+                  color: colorScheme.secondary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
               ],
             ),

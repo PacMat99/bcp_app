@@ -24,13 +24,14 @@ class _ConfigSummaryWidgetState extends State<ConfigSummaryWidget> {
   }
 
   Future<void> _loadAllConfigs() async {
-    // Usa l'helper invece di caricare manualmente
     final completeConfig = await ConfigHelper.loadCompleteConfig();
     
-    setState(() {
-      _config = completeConfig;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _config = completeConfig;
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -39,63 +40,209 @@ class _ConfigSummaryWidgetState extends State<ConfigSummaryWidget> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Riepilogo Configurazione',
-            style: Theme.of(context).textTheme.headlineSmall,
+          // HEADER CARD (Standard Precision Style)
+          Card(
+            color: colorScheme.primaryContainer,
+            margin: const EdgeInsets.only(bottom: 24),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.summarize_outlined, 
+                    size: 48, 
+                    color: colorScheme.onPrimaryContainer
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'System Overview',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Complete telemetry setup',
+                          style: TextStyle(
+                            color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
           
-          if (_config['bike'] != null) _buildConfigCard(
-            'Bici',
-            Icons.directions_bike,
-            BikeConfig.fromJson(_config['bike']),
-          ),
+          if (_config['bike'] != null) 
+            _buildConfigCard(
+              'Bike Geometry',
+              Icons.directions_bike,
+              _buildBikeContent(BikeConfig.fromJson(_config['bike'])),
+            ),
           
-          if (_config['fork'] != null) _buildConfigCard(
-            'Forcella',
-            Icons.settings_input_component,
-            ForkConfig.fromJson(_config['fork']),
-          ),
+          if (_config['fork'] != null) 
+            _buildConfigCard(
+              'Fork Setup',
+              Icons.compress,
+              _buildForkContent(ForkConfig.fromJson(_config['fork'])),
+            ),
           
-          if (_config['shock'] != null) _buildConfigCard(
-            'Ammortizzatore',
-            Icons.published_with_changes,
-            ShockConfig.fromJson(_config['shock']),
-          ),
+          if (_config['shock'] != null) 
+            _buildConfigCard(
+              'Shock Setup',
+              Icons.height,
+              _buildShockContent(ShockConfig.fromJson(_config['shock'])),
+            ),
           
-          if (_config['wheels'] != null) _buildConfigCard(
-            'Ruote',
-            Icons.album,
-            WheelConfig.fromJson(_config['wheels']),
-          ),
+          if (_config['wheels'] != null) 
+            _buildConfigCard(
+              'Wheels & Tires',
+              Icons.tire_repair,
+              _buildWheelsContent(WheelConfig.fromJson(_config['wheels'])),
+            ),
           
-          if (_config['esp32'] != null) _buildConfigCard(
-            'ESP32',
-            Icons.memory,
-            Esp32Config.fromJson(_config['esp32']),
-          ),
+          if (_config['esp32'] != null) 
+            _buildConfigCard(
+              'Hardware',
+              Icons.memory,
+              _buildEsp32Content(Esp32Config.fromJson(_config['esp32'])),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildConfigCard(String title, IconData icon, dynamic config) {
+  Widget _buildConfigCard(String title, IconData icon, Widget content) {
     return Card(
+      clipBehavior: Clip.hardEdge,
       margin: const EdgeInsets.only(bottom: 12),
       child: ExpansionTile(
-        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
-        title: Text(title),
+        leading: Icon(icon, color: Theme.of(context).colorScheme.secondary),
+        title: Text(
+          title, 
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        collapsedBackgroundColor: Colors.white,
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              _formatConfig(config),
-              style: Theme.of(context).textTheme.bodySmall,
+          const Divider(),
+          content,
+        ],
+      ),
+    );
+  }
+
+  // --- CONTENT BUILDERS ---
+
+  Widget _buildBikeContent(BikeConfig config) {
+    return Column(
+      children: [
+        _buildRow('Frame Type', config.bikeType.displayName),
+        if (config.forkTravel != null)
+           _buildRow('Fork Travel', '${config.forkTravel?.toStringAsFixed(0)} mm'),
+        if (config.shockTravel != null)
+           _buildRow('Shock Travel', '${config.shockTravel?.toStringAsFixed(0)} mm'),
+      ],
+    );
+  }
+
+  Widget _buildForkContent(ForkConfig config) {
+    return Column(
+      children: [
+        _buildRow('Model', config.name.isNotEmpty ? config.name : 'Not set'),
+        _buildRow('Travel', '${config.travel} mm'),
+        _buildRow('Spring', config.springType.name),
+        const Divider(height: 16, thickness: 0.5),
+        _buildRow('Pressure', '${config.pressure.toStringAsFixed(0)} psi'),
+        _buildRow('Sag', '${config.sag.toStringAsFixed(0)} %'),
+        _buildRow('HSC / LSC', '${config.hsc} / ${config.lsc} clicks'),
+        _buildRow('Rebound', '${config.rebound} clicks'),
+        _buildRow('Tokens', '${config.tokens}'),
+      ],
+    );
+  }
+
+  Widget _buildShockContent(ShockConfig config) {
+    return Column(
+      children: [
+        _buildRow('Model', config.name.isNotEmpty ? config.name : 'Not set'),
+        _buildRow('Travel', '${config.travel} mm'),
+        _buildRow('Spring', config.springType.name),
+        const Divider(height: 16, thickness: 0.5),
+        _buildRow('Pressure', '${config.pressure.toStringAsFixed(0)} psi'),
+        _buildRow('Sag', '${config.sag.toStringAsFixed(0)} %'),
+        _buildRow('HSC / LSC', '${config.hsc} / ${config.lsc} clicks'),
+        _buildRow('Rebound', '${config.rebound} clicks'),
+        _buildRow('Tokens', '${config.tokens}'),
+      ],
+    );
+  }
+
+  Widget _buildWheelsContent(WheelConfig config) {
+    return Column(
+      children: [
+        _buildRow('Rims', config.rimModel.isNotEmpty ? config.rimModel : 'Generic'),
+        _buildRow('Material', config.rimMaterial.displayName),
+        const Divider(height: 16, thickness: 0.5),
+        _buildSectionHeader('Front Tire'),
+        _buildRow('Model', config.frontTire.model),
+        _buildRow('Setup', config.frontTire.setup.displayName),
+        _buildRow('Pressure', '${config.frontTire.pressure.toStringAsFixed(1)} ${config.frontTire.pressureUnit.displayName}'),
+        const SizedBox(height: 8),
+        _buildSectionHeader('Rear Tire'),
+        _buildRow('Model', config.rearTire.model),
+        _buildRow('Setup', config.rearTire.setup.displayName),
+        _buildRow('Pressure', '${config.rearTire.pressure.toStringAsFixed(1)} ${config.rearTire.pressureUnit.displayName}'),
+      ],
+    );
+  }
+
+  Widget _buildEsp32Content(Esp32Config config) {
+    return Column(
+      children: [
+        _buildRow('Connected Sensors', '${config.sensorCount}'),
+        _buildRow('Board Type', 'ESP32-C6'),
+      ],
+    );
+  }
+
+  // --- HELPER WIDGETS ---
+
+  Widget _buildRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary, // Slate Dark
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
           ),
         ],
@@ -103,25 +250,21 @@ class _ConfigSummaryWidgetState extends State<ConfigSummaryWidget> {
     );
   }
 
-  String _formatConfig(dynamic config) {
-    if (config is BikeConfig) {
-      return 'Tipo: ${config.bikeType.displayName}\n';
-    } else if (config is ForkConfig) {
-      return '${config.name}\n'
-             'Escursione: ${config.travel}mm\n'
-             'Sag: ${config.sag.toStringAsFixed(0)}% | Pressione: ${config.pressure.toStringAsFixed(0)} PSI';
-    } else if (config is ShockConfig) {
-      return '${config.name}\n'
-             'Escursione: ${config.travel}mm\n'
-             'Sag: ${config.sag.toStringAsFixed(0)}% | Pressione: ${config.pressure.toStringAsFixed(0)} PSI';
-    } else if (config is WheelConfig) {
-      return 'Ruote: ${config.frontTire.size}" / ${config.rearTire.size}"'
-             'Cerchi: ${config.rimModel} (${config.rimMaterial.displayName})\n'
-             'Ant: ${config.frontTire.model}\n'
-             'Post: ${config.rearTire.model}';
-    } else if (config is Esp32Config) {
-      return 'Sensori: ${config.sensorCount}';
-    }
-    return 'N/A';
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4, top: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title.toUpperCase(),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.secondary, // Tech Blue
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
+    );
   }
 }
