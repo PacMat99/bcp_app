@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart'; // Import necessario per AppTheme.success
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,17 +15,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _serverUrlController = TextEditingController();
   bool _isTestingConnection = false;
   bool? _connectionStatus;
-  late ApiService _apiService;
+  
+  // Rimosso late ApiService per evitare problemi di inizializzazione, 
+  // lo recuperiamo via context quando serve.
+
+  final _cfClientIdController = TextEditingController();
+  final _cfClientSecretController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _apiService = context.read<ApiService>();
     _loadSettings();
   }
-
-  final _cfClientIdController = TextEditingController();
-  final _cfClientSecretController = TextEditingController();
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -38,10 +40,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _cfClientSecretController.text = cfClientSecret;
     });
 
-    final apiService = context.read<ApiService>();
-    apiService.setBaseUrl(serverUrl);
-    if (cfClientId.isNotEmpty && cfClientSecret.isNotEmpty) {
-      apiService.setCloudflareCredentials(cfClientId, cfClientSecret);
+    // Aggiorna il servizio se il widget è ancora montato
+    if (mounted) {
+      final apiService = context.read<ApiService>();
+      apiService.setBaseUrl(serverUrl);
+      if (cfClientId.isNotEmpty && cfClientSecret.isNotEmpty) {
+        apiService.setCloudflareCredentials(cfClientId, cfClientSecret);
+      }
     }
   }
 
@@ -49,14 +54,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('server_url', _serverUrlController.text);
 
-    final apiService = context.read<ApiService>();
-    apiService.setBaseUrl(_serverUrlController.text);
-
     if (mounted) {
+      final apiService = context.read<ApiService>();
+      apiService.setBaseUrl(_serverUrlController.text);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Impostazioni salvate'),
-          backgroundColor: Colors.green,
+          content: Text('Settings saved'),
+          backgroundColor: AppTheme.success, // STILE AGGIORNATO
         ),
       );
     }
@@ -67,17 +72,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setString('cf_client_id', _cfClientIdController.text);
     await prefs.setString('cf_client_secret', _cfClientSecretController.text);
 
-    final apiService = context.read<ApiService>();
-    apiService.setCloudflareCredentials(
-      _cfClientIdController.text,
-      _cfClientSecretController.text,
-    );
-
     if (mounted) {
+      final apiService = context.read<ApiService>();
+      apiService.setCloudflareCredentials(
+        _cfClientIdController.text,
+        _cfClientSecretController.text,
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Credenziali Cloudflare salvate'),
-          backgroundColor: Colors.green,
+          content: Text('Cloudflare credentials saved'),
+          backgroundColor: AppTheme.success, // STILE AGGIORNATO
         ),
       );
     }
@@ -90,25 +95,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     final apiService = context.read<ApiService>();
+    // Assicuriamo di testare l'URL scritto nel campo, anche se non salvato
     apiService.setBaseUrl(_serverUrlController.text);
 
     final success = await apiService.testConnection();
 
-    setState(() {
-      _isTestingConnection = false;
-      _connectionStatus = success;
-    });
+    if (mounted) {
+      setState(() {
+        _isTestingConnection = false;
+        _connectionStatus = success;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Impostazioni'),
+        title: const Text('Settings'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // HEADER CARD (Nuova aggiunta per coerenza)
+          Card(
+            color: colorScheme.primaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.settings_applications,
+                    size: 48,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'System Configuration',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Backend & Connectivity',
+                          style: TextStyle(
+                            color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
           // Server Settings
           Card(
             child: Padding(
@@ -118,39 +168,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.cloud,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      Icon(Icons.cloud, color: colorScheme.secondary),
                       const SizedBox(width: 8),
                       Text(
-                        'Server Backend',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        'Backend Server',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
+                  
+                  // STILE AGGIORNATO: Input Field pulito (eredita dal tema)
                   TextField(
                     controller: _serverUrlController,
-                    decoration: InputDecoration(
-                      labelText: 'URL Server Raspberry Pi',
+                    decoration: const InputDecoration(
+                      labelText: 'Raspberry Pi / Server URL',
                       hintText: 'http://api.domain.com',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.link),
-                      suffixIcon: _connectionStatus != null
-                        ? Icon(
-                            _connectionStatus! 
-                                ? Icons.check_circle 
-                                : Icons.error,
-                            color: _connectionStatus! 
-                                ? Colors.green 
-                                : Colors.red,
-                          )
-                        : null,
+                      prefixIcon: Icon(Icons.link),
                     ),
                     keyboardType: TextInputType.url,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  
                   Row(
                     children: [
                       Expanded(
@@ -163,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.wifi_find),
-                          label: const Text('Test Connessione'),
+                          label: const Text('Test Connection'),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -171,24 +213,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: FilledButton.icon(
                           onPressed: _saveSettings,
                           icon: const Icon(Icons.save),
-                          label: const Text('Salva'),
+                          label: const Text('Save'),
                         ),
                       ),
                     ],
                   ),
+                  
+                  // Visualizzazione Stato Connessione Migliorata
                   if (_connectionStatus != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        _connectionStatus!
-                            ? 'Server raggiungibile'
-                            : 'Server non raggiungibile',
-                        style: TextStyle(
-                          color: _connectionStatus!
-                            ? Colors.green
-                            : Colors.red,
-                          fontWeight: FontWeight.bold,
+                    Container(
+                      margin: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _connectionStatus! 
+                            ? AppTheme.success.withValues(alpha: 0.1) 
+                            : colorScheme.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _connectionStatus! 
+                              ? AppTheme.success 
+                              : colorScheme.error,
                         ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _connectionStatus! ? Icons.check_circle : Icons.error,
+                            color: _connectionStatus! ? AppTheme.success : colorScheme.error,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            _connectionStatus!
+                                ? 'Server Reachable'
+                                : 'Connection Failed',
+                            style: TextStyle(
+                              color: _connectionStatus!
+                                ? AppTheme.success
+                                : colorScheme.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],
@@ -206,14 +271,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.security,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      Icon(Icons.security, color: colorScheme.secondary),
                       const SizedBox(width: 8),
                       Text(
                         'Cloudflare Access',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ],
                   ),
@@ -222,7 +287,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _cfClientIdController,
                     decoration: const InputDecoration(
                       labelText: 'CF-Access-Client-Id',
-                      border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.vpn_key),
                     ),
                     obscureText: true,
@@ -232,21 +296,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _cfClientSecretController,
                     decoration: const InputDecoration(
                       labelText: 'CF-Access-Client-Secret',
-                      border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.password),
                     ),
                     obscureText: true,
                   ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: _saveCfCredentials,
-                    icon: const Icon(Icons.save),
-                    label: const Text('Salva Credenziali'),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _saveCfCredentials,
+                      icon: const Icon(Icons.lock),
+                      label: const Text('Save Secure Credentials'),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
 
           // App Info
           Card(
@@ -257,22 +324,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      Icon(Icons.info_outline, color: colorScheme.secondary),
                       const SizedBox(width: 8),
                       Text(
-                        'Informazioni App',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        'App Info',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ],
                   ),
-                  const Divider(),
-                  _buildInfoRow('Versione', '1.0.0'),
-                  _buildInfoRow('Sistema', 'MTB Telemetry'),
+                  const Divider(height: 24),
+                  _buildInfoRow('Version', '1.0.0'),
+                  _buildInfoRow('System', 'MTB Telemetry'),
                   _buildInfoRow('Hardware', 'ESP32-C6'),
-                  _buildInfoRow('Sensori', 'LSM6DSOX x2'),
+                  _buildInfoRow('Sensors', 'LSM6DSOX'),
                 ],
               ),
             ),
@@ -281,30 +348,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Help
           Card(
+            clipBehavior: Clip.hardEdge,
             child: ListTile(
-              leading: const Icon(Icons.help_outline),
-              title: const Text('Guida e Supporto'),
-              subtitle: const Text('Come utilizzare l\'app'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              leading: Icon(Icons.help_outline, color: colorScheme.secondary),
+              title: const Text('Help & Support'),
+              subtitle: const Text('How to use the app'),
+              trailing: Icon(Icons.arrow_forward_ios, size: 16, color: colorScheme.onSurfaceVariant),
               onTap: () {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Guida Rapida'),
+                    title: const Text('Quick Guide'),
                     content: const SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('1. Connetti l\'ESP32 dalla dashboard'),
+                          Text('1. Connect ESP32 via Dashboard'),
                           SizedBox(height: 8),
-                          Text('2. Configura la tua bici dal menu'),
+                          Text('2. Configure Bike & Geometry'),
                           SizedBox(height: 8),
-                          Text('3. Gestisci i file dalla SD Card'),
+                          Text('3. Manage logs in File Manager'),
                           SizedBox(height: 8),
-                          Text('4. Visualizza dati in tempo reale'),
+                          Text('4. View Real-time data stream'),
                           SizedBox(height: 8),
-                          Text('5. Invia i file al server per l\'analisi'),
+                          Text('5. Upload logs to Server'),
                         ],
                       ),
                     ),
@@ -319,6 +387,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -330,10 +399,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
+          Text(
+            label,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ],
       ),

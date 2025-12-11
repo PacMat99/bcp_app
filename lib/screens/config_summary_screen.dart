@@ -8,7 +8,7 @@ class ConfigSummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riepilogo Configurazione'),
+        title: const Text('Configuration Summary'),
       ),
       body: const ConfigSummaryWidget(),
     );

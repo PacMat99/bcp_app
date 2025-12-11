@@ -7,9 +7,9 @@ extension SpringTypeExtension on SpringType {
   String get displayName {
     switch (this) {
       case SpringType.air:
-        return 'Aria';
+        return 'Air';
       case SpringType.coil:
-        return 'Molla';
+        return 'Coil';
     }
   }
 }

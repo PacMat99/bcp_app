@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../models/bike_config.dart'; // Serve solo per l'enum BikeType
 import '../services/ble_service.dart';
+import '../utils/bike_type_prefs.dart';
 import 'file_manager_screen.dart';
-import 'bike_config_screen.dart';
 import 'esp32_config_screen.dart';
 import 'realtime_preview_screen.dart';
 import 'settings_screen.dart';
@@ -12,6 +13,7 @@ import 'fork_config_screen.dart';
 import 'shock_config_screen.dart';
 import 'wheel_config_screen.dart';
 import 'config_summary_screen.dart';
+import '../theme/app_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -21,10 +23,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  BikeType _selectedBikeType = BikeType.hardtail; // Default safe
+
   @override
   void initState() {
     super.initState();
     _checkPermissions();
+    _loadBikeType();
   }
 
   Future<void> _checkPermissions() async {
@@ -40,25 +45,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _loadBikeType() async {
+    _selectedBikeType = await BikeTypePrefs.loadBikeType();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _onBikeTypeChanged(BikeType type) async {
+    setState(() {
+      _selectedBikeType = type;
+    });
+    await BikeTypePrefs.saveBikeType(type);
+  }
+
   void _showPermissionDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Permessi Necessari'),
+        title: const Text('Permissions Required'),
         content: const Text(
-          'L\'app necessita dei permessi Bluetooth e Posizione per funzionare correttamente.',
+          'Bluetooth and Location permissions are required for the app to function.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annulla'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Apri Impostazioni'),
+            child: const Text('Open Settings'),
           ),
         ],
       ),
@@ -72,8 +91,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Bike Comfort Project'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.summarize),
-            tooltip: 'Riepilogo Config',
+            icon: const Icon(Icons.summarize_outlined),
+            tooltip: 'Config Summary',
             onPressed: () {
               Navigator.push(
                 context,
@@ -84,7 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings_outlined),
             onPressed: () {
               Navigator.push(
                 context,
@@ -106,193 +125,132 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- SCAN VIEW ---
   Widget _buildScanView(BleService bleService) {
-    return Column(
-      children: [
-        // Status card
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                bleService.isScanning 
-                    ? Icons.bluetooth_searching 
-                    : Icons.bluetooth_disabled,
-                size: 64,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                bleService.isScanning 
-                    ? 'Scansione in corso...' 
-                    : 'Cerca il tuo ESP32',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                bleService.isScanning 
-                    ? 'Trovati ${bleService.scanResults.length} dispositivi'
-                    : 'Premi il pulsante per iniziare',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: bleService.isScanning ? null : _startScan,
-                icon: const Icon(Icons.search),
-                label: const Text('Avvia Scansione'),
-                style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                backgroundColor: const Color(0xFF9C27B0),
-                elevation: 8,
-                shadowColor: const Color(0xFFE040FB).withValues(alpha: 0.5),
-              ),
-              ),
-            ],
-          ),
-        ),
+    // 1. FILTRO PROFESSIONALE A MONTE
+    // Creo una lista contenente SOLO i dispositivi che hanno "esp" nel nome
+    final espDevices = bleService.scanResults
+        .where((r) => r.device.platformName.toLowerCase().contains('esp'))
+        .toList();
 
-        // Lista dispositivi
-          Expanded(
-            child: bleService.scanResults.isEmpty
-                ? Center(
-                    child: Text(
-                      'Nessun dispositivo trovato',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Card(
+            margin: const EdgeInsets.all(32),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    bleService.isScanning 
+                        ? Icons.radar 
+                        : Icons.bluetooth_searching,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    bleService.isScanning 
+                        ? 'Scanning Devices...' 
+                        : 'Connect Telemetry',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 2. USO LA LISTA FILTRATA PER IL CONTEGGIO
+                  Text(
+                    bleService.isScanning 
+                        ? 'Found ${espDevices.length} ESP devices' // Conteggio reale
+                        : 'Power on your ESP32 unit',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  if (!bleService.isScanning)
+                    FilledButton.icon(
+                      onPressed: _startScan,
+                      icon: const Icon(Icons.search),
+                      label: const Text('START SCAN'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(200, 50),
                       ),
                     ),
-                  )
-                : Builder(
-                    builder: (context) {
-                      // Filtra solo dispositivi ESP32
-                      final filteredResults = bleService.scanResults.where((result) {
-                        final name = result.device.platformName.toLowerCase();
-                        return name.contains('esp');
-                      }).toList();
-
-                      // Se dopo il filtro non ci sono dispositivi
-                      if (filteredResults.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.search_off,
-                                size: 64,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Nessun ESP32 trovato',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Trovati ${bleService.scanResults.length} dispositivi, ma nessuno ESP32',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      // Mostra solo ESP32 filtrati
-                      return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: filteredResults.length,
-                        itemBuilder: (context, index) {
-                          final result = filteredResults[index];
-                          final device = result.device;
-                          final deviceName = device.platformName.isNotEmpty
-                              ? device.platformName
-                              : 'Dispositivo sconosciuto';
-
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: ListTile(
-                              leading: Icon(
-                                Icons.sensors,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              title: Text(deviceName),
-                              subtitle: Text(
-                                'MAC: ${device.remoteId}\nRSSI: ${result.rssi} dBm',
-                              ),
-                              trailing: CircleAvatar(
-                                backgroundColor: result.rssi > -70
-                                    ? Colors.green
-                                    : result.rssi > -85
-                                        ? Colors.orange
-                                        : Colors.red,
-                                child: Text(
-                                  '${result.rssi}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              onTap: () => _connectToDevice(bleService, device),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+                ],
+              ),
+            ),
           ),
 
-      ],
+          // 3. LISTA DISPOSITIVI FILTRATI
+          if (espDevices.isNotEmpty)
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: espDevices.length, // Lunghezza della lista filtrata
+                itemBuilder: (context, index) {
+                  final result = espDevices[index]; // Elemento filtrato
+                  
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.developer_board,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      title: Text(result.device.platformName),
+                      subtitle: Text('ID: ${result.device.remoteId}'),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${result.rssi} dBm', 
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)
+                        ),
+                      ),
+                      onTap: () => _connectToDevice(bleService, result.device),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
     );
   }
 
+  // --- CONNECTED VIEW (Dashboard Principale) ---
   Widget _buildConnectedView(BleService bleService) {
+    final theme = Theme.of(context);
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Stato connessione
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF6A1B9A),
-                  const Color(0xFF9C27B0),
-                  const Color(0xFFAB47BC),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF9C27B0).withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          // 1. STATUS CARD
+          Card(
+            color: theme.colorScheme.primary,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.white, size: 32),
-                  const SizedBox(width: 12),
+                  const Icon(Icons.wifi_tethering, color: Colors.greenAccent, size: 32),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Connesso',
+                          'System Online',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -300,141 +258,147 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         Text(
-                          bleService.connectedDevice?.platformName ?? 'ESP32',
+                          bleService.connectedDevice?.platformName ?? 'ESP32 Device',
                           style: const TextStyle(color: Colors.white70),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: const Icon(Icons.power_settings_new, color: Colors.white70),
                     onPressed: () => bleService.disconnect(),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 4),
 
-// Menu funzioni
-Expanded(
-  child: GridView.count(
-    crossAxisCount: 2,
-    mainAxisSpacing: 16,
-    crossAxisSpacing: 16,
-    childAspectRatio: 0.85, // Regola altezza card
-    children: [
-      _buildMenuCard(
-        icon: Icons.folder_open,
-        title: 'Gestione File',
-        subtitle: 'SD Card ESP32',
-        accentColor: const Color(0xFF9C27B0),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const FileManagerScreen(),
+          // 2. BIKE SELECTOR CARD (Semplificata)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.pedal_bike, size: 20, color: theme.colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Active Profile',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Selettore a tutta larghezza
+                  SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<BikeType>(
+                      segments: const [
+                        ButtonSegment(
+                          value: BikeType.rigid, 
+                          label: Text('Rigid'), 
+                          icon: Icon(Icons.do_not_touch)
+                        ),
+                        ButtonSegment(
+                          value: BikeType.hardtail, 
+                          label: Text('Hardtail'), 
+                          icon: Icon(Icons.arrow_upward)
+                        ),
+                        ButtonSegment(
+                          value: BikeType.fullSuspension, 
+                          label: Text('Full'), 
+                          icon: Icon(Icons.import_export)
+                        ),
+                      ],
+                      selected: {_selectedBikeType},
+                      onSelectionChanged: (selection) => _onBikeTypeChanged(selection.first),
+                      style: ButtonStyle(
+                        visualDensity: VisualDensity.compact,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
-      ),
-      _buildMenuCard(
-        icon: Icons.directions_bike,
-        title: 'Setup Bici',
-        subtitle: 'Tipo e ruote',
-        accentColor: const Color(0xFFE040FB),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const BikeConfigScreen(),
-            ),
-          );
-        },
-      ),
-      _buildMenuCard(
-        icon: Icons.settings_input_component,
-        title: 'Forcella',
-        subtitle: 'Setup anteriore',
-        accentColor: const Color(0xFF9C27B0),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ForkConfigScreen(),
-            ),
-          );
-        },
-      ),
-      _buildMenuCard(
-        icon: Icons.published_with_changes,
-        title: 'Ammortizzatore',
-        subtitle: 'Setup posteriore',
-        accentColor: const Color(0xFFE040FB),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ShockConfigScreen(),
-            ),
-          );
-        },
-      ),
-      _buildMenuCard(
-        icon: Icons.album,
-        title: 'Ruote',
-        subtitle: 'Cerchi e gomme',
-        accentColor: const Color(0xFF00BCD4),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const WheelConfigScreen(),
-            ),
-          );
-        },
-      ),
-      _buildMenuCard(
-        icon: Icons.memory,
-        title: 'Hardware',
-        subtitle: 'Config ESP32',
-        accentColor: const Color(0xFF00BCD4),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const Esp32ConfigScreen(),
-            ),
-          );
-        },
-      ),
-      _buildMenuCard(
-        icon: Icons.show_chart,
-        title: 'Preview Live',
-        subtitle: 'Dati Sensori',
-        accentColor: const Color(0xFF9C27B0),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const RealtimePreviewScreen(),
-            ),
-          );
-        },
-      ),
-      _buildMenuCard(
-        icon: Icons.info_outline,
-        title: 'Info Sistema',
-        subtitle: 'Stato ESP32',
-        accentColor: const Color(0xFFAB47BC),
-        onTap: () {
-          _showSystemInfo();
-        },
-      ),
-    ],
-  ),
-),
+          ),
 
+          const SizedBox(height: 4),
+
+          // 3. MENU GRID
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.0, // Cards quadrate
+              children: [
+                _buildMenuCard(
+                  icon: Icons.sd_storage_outlined,
+                  title: 'File Manager',
+                  subtitle: 'Logs & Data',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const FileManagerScreen())),
+                ),
+                
+                // --- LOGICA VISIBILITÀ SOSPENSIONI ---
+                
+                // Card Forcella: Mostra se NON è Rigida (Hardtail o Full)
+                if (_selectedBikeType != BikeType.rigid)
+                  _buildMenuCard(
+                    icon: Icons.compress,
+                    title: 'Fork Setup',
+                    subtitle: 'Front Susp.',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForkConfigScreen())),
+                  ),
+                  
+                // Card Ammortizzatore: Mostra SOLO se è Full
+                if (_selectedBikeType == BikeType.fullSuspension)
+                  _buildMenuCard(
+                    icon: Icons.height,
+                    title: 'Shock Setup',
+                    subtitle: 'Rear Susp.',
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ShockConfigScreen())),
+                  ),
+                  
+                _buildMenuCard(
+                  icon: Icons.tire_repair,
+                  title: 'Wheels',
+                  subtitle: 'Tires & Rims',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WheelConfigScreen())),
+                ),
+                
+                _buildMenuCard(
+                  icon: Icons.memory,
+                  title: 'Hardware',
+                  subtitle: 'ESP32 Config',
+                  accentColor: theme.colorScheme.tertiary, // Arancione
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const Esp32ConfigScreen())),
+                ),
+                
+                _buildMenuCard(
+                  icon: Icons.show_chart,
+                  title: 'Live Data',
+                  subtitle: 'Real-time View',
+                  accentColor: theme.colorScheme.tertiary, // Arancione
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RealtimePreviewScreen())),
+                ),
+
+                _buildMenuCard(
+                  icon: Icons.info_outline,
+                  title: 'System Info',
+                  subtitle: 'Status',
+                  accentColor: Colors.grey,
+                  onTap: _showSystemInfo,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -445,59 +409,46 @@ Expanded(
     required String title,
     required String subtitle,
     required VoidCallback onTap,
-    Color? accentColor, // Aggiungi questo parametro
+    Color? accentColor,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            accentColor?.withValues(alpha: 0.1) ?? const Color(0xFF2D2538),
-            const Color(0xFF2D2538),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: accentColor?.withValues(alpha: 0.3) ?? Colors.transparent,
-          width: 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 48, color: accentColor ?? const Color(0xFFE040FB)),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+    final theme = Theme.of(context);
+    final color = accentColor ?? theme.colorScheme.secondary;
+    
+    return Card(
+      clipBehavior: Clip.hardEdge, // Ripple contenuto
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: color),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
+  // --- UTILS ---
 
   Future<void> _connectToDevice(BleService bleService, BluetoothDevice device) async {
     showDialog(
@@ -512,7 +463,7 @@ Expanded(
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Connessione in corso...'),
+                Text('Connecting...'),
               ],
             ),
           ),
@@ -527,9 +478,9 @@ Expanded(
       
       if (!success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Connessione fallita'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Connection Failed'),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -540,7 +491,7 @@ Expanded(
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Info Sistema'),
+        title: const Text('System Info'),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,15 +499,12 @@ Expanded(
             Text('ESP32-C6 Telemetry System'),
             SizedBox(height: 8),
             Text('Firmware: v1.0.0'),
-            Text('Sensori: LSM6DSOX (x2)'),
+            Text('Sensors: LSM6DSOX'),
             Text('Storage: SD Card'),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
         ],
       ),
     );

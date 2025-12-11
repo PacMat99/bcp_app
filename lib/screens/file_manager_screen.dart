@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import '../services/ble_service.dart';
 import '../services/api_service.dart';
 import '../models/file_info.dart';
+import '../theme/app_theme.dart'; // Necessario per AppTheme.success
 
 class FileManagerScreen extends StatefulWidget {
   const FileManagerScreen({super.key});
@@ -47,7 +48,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Download in corso...'),
+            Text('Downloading file...'),
           ],
         ),
       ),
@@ -55,7 +56,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
 
     final data = await bleService.downloadFile(file.name);
     
-    if (mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context); // Chiude il dialog
 
     if (data != null) {
       // Salva file localmente
@@ -71,10 +72,10 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('File scaricato: ${file.name}'),
-            backgroundColor: Colors.green,
+            content: Text('Downloaded: ${file.name}'),
+            backgroundColor: AppTheme.success, // Verde del tema
             action: SnackBarAction(
-              label: 'Invia',
+              label: 'UPLOAD',
               textColor: Colors.white,
               onPressed: () => _uploadToServer(file),
             ),
@@ -84,9 +85,9 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Errore durante il download'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: const Text('Download failed'),
+            backgroundColor: Theme.of(context).colorScheme.error, // Rosso del tema
           ),
         );
       }
@@ -97,16 +98,19 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Conferma Eliminazione'),
-        content: Text('Vuoi eliminare ${file.name}?'),
+        title: const Text('Confirm Deletion'),
+        content: Text('Delete ${file.name} permanently?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annulla'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Elimina', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Delete', 
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ],
       ),
@@ -120,7 +124,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
         setState(() => _files.remove(file));
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${file.name} eliminato')),
+            SnackBar(content: Text('${file.name} deleted')),
           );
         }
       }
@@ -130,7 +134,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
   Future<void> _uploadToServer(FileInfo file) async {
     if (file.localPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Scarica prima il file')),
+        const SnackBar(content: Text('Download the file first')),
       );
       return;
     }
@@ -144,7 +148,7 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text('Invio al server...'),
+            Text('Uploading to server...'),
           ],
         ),
       ),
@@ -157,14 +161,14 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
     );
 
     if (mounted) {
-      Navigator.pop(context);
+      Navigator.pop(context); // Chiude il dialog
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success 
-              ? 'File e configurazione inviati con successo' 
-              : 'Errore invio'),
-          backgroundColor: success ? Colors.green : Colors.red,
+              ? 'File uploaded successfully' 
+              : 'Upload failed'),
+          backgroundColor: success ? AppTheme.success : Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -172,9 +176,12 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestione File'),
+        title: const Text('File Manager'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -182,91 +189,164 @@ class _FileManagerScreenState extends State<FileManagerScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _files.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.folder_open, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('Nessun file sulla SD Card'),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _files.length,
-                  itemBuilder: (context, index) {
-                    final file = _files[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: Icon(
-                          file.isDownloaded 
-                              ? Icons.check_circle 
-                              : Icons.insert_drive_file,
-                          color: file.isDownloaded 
-                              ? Colors.green 
-                              : Theme.of(context).colorScheme.primary,
-                        ),
-                        title: Text(file.name),
-                        subtitle: Text(
-                          '${file.sizeFormatted}${file.date != null ? ' • ${file.date!.day}/${file.date!.month}/${file.date!.year}' : ''}',
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (value) {
-                            switch (value) {
-                              case 'download':
-                                _downloadFile(file);
-                                break;
-                              case 'upload':
-                                _uploadToServer(file);
-                                break;
-                              case 'delete':
-                                _deleteFile(file);
-                                break;
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'download',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.download),
-                                  SizedBox(width: 8),
-                                  Text('Scarica'),
-                                ],
-                              ),
+      body: Column(
+        children: [
+          // HEADER CARD (Aggiunta per coerenza con le altre schermate)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Card(
+              color: colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sd_storage_outlined,
+                      size: 48,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SD Card Storage',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.bold,
                             ),
-                            if (file.isDownloaded)
-                              const PopupMenuItem(
-                                value: 'upload',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.cloud_upload),
-                                    SizedBox(width: 8),
-                                    Text('Invia a Server'),
-                                  ],
-                                ),
-                              ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text('Elimina'),
-                                ],
+                          ),
+                          Text(
+                            'Manage telemetry logs',
+                            style: TextStyle(
+                              color: colorScheme.onPrimaryContainer.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // LISTA FILE
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _files.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.folder_off_outlined, 
+                              size: 64, 
+                              color: colorScheme.outline,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No logs found on SD Card',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
                         ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        itemCount: _files.length,
+                        itemBuilder: (context, index) {
+                          final file = _files[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            color: file.isDownloaded 
+                                ? AppTheme.success.withValues(alpha: 0.05) 
+                                : null,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: file.isDownloaded
+                                  ? BorderSide(color: AppTheme.success.withValues(alpha: 0.3), width: 1)
+                                  : BorderSide.none,
+                            ),
+                            child: ListTile(
+                              leading: Icon(
+                                file.isDownloaded 
+                                    ? Icons.check_circle 
+                                    : Icons.insert_drive_file,
+                                color: file.isDownloaded 
+                                    ? AppTheme.success 
+                                    : colorScheme.secondary, // Tech Blue
+                              ),
+                              title: Text(
+                                file.name,
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              subtitle: Text(
+                                '${file.sizeFormatted}${file.date != null ? ' • ${file.date!.day}/${file.date!.month}/${file.date!.year}' : ''}',
+                                style: TextStyle(color: colorScheme.onSurfaceVariant),
+                              ),
+                              trailing: PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  switch (value) {
+                                    case 'download':
+                                      _downloadFile(file);
+                                      break;
+                                    case 'upload':
+                                      _uploadToServer(file);
+                                      break;
+                                    case 'delete':
+                                      _deleteFile(file);
+                                      break;
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'download',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.download),
+                                        SizedBox(width: 12),
+                                        Text('Download'),
+                                      ],
+                                    ),
+                                  ),
+                                  if (file.isDownloaded)
+                                    const PopupMenuItem(
+                                      value: 'upload',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.cloud_upload),
+                                          SizedBox(width: 12),
+                                          Text('Upload to Server'),
+                                        ],
+                                      ),
+                                    ),
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete, color: colorScheme.error),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          'Delete', 
+                                          style: TextStyle(color: colorScheme.error),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+          ),
+        ],
+      ),
     );
   }
 }

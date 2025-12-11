@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/wheel_config.dart';
+import '../theme/app_theme.dart';
 
 class WheelConfigScreen extends StatefulWidget {
   const WheelConfigScreen({super.key});
@@ -84,9 +85,9 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Configurazione ruote salvata'),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: const Text('Wheels configuration saved'),
+          backgroundColor: AppTheme.success,
         ),
       );
       Navigator.pop(context);
@@ -95,26 +96,30 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurazione Ruote'),
+        title: const Text('Wheels Configuration'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header
+            // Header - Stile coerente con Bike config
             Card(
-              color: Theme.of(context).colorScheme.tertiaryContainer,
+              color: colorScheme.primaryContainer,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.album,
+                      Icons.tire_repair, // Icona Ruote
                       size: 48,
-                      color: Theme.of(context).colorScheme.onTertiaryContainer,
+                      color: colorScheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -122,16 +127,16 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Setup Ruote',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onTertiaryContainer,
+                            'Wheels Setup',
+                            style: textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            'Cerchi e pneumatici',
+                            'Wheels and Tires',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onTertiaryContainer.withValues(alpha: 0.8),
+                              color: colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ],
@@ -141,66 +146,68 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Cerchi
+            // Sezione Info
             Text(
-              'Cerchi',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: const Color(0xFF00BCD4),
+              'General Info',
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
 
             TextField(
               controller: _rimModelController,
-              decoration: InputDecoration(
-                labelText: 'Modello Cerchi',
-                hintText: 'es. DT Swiss XM 1700',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                prefixIcon: const Icon(Icons.album),
+              decoration: const InputDecoration(
+                labelText: 'Rims Model',
+                hintText: 'eg. Damil Flow MK4',
+                prefixIcon: Icon(Icons.album_outlined),
               ),
             ),
             const SizedBox(height: 16),
 
+            // Materiale Cerchi
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Materiale Cerchi'),
+                    Text('Rims Material', style: textTheme.titleSmall),
                     const SizedBox(height: 12),
-                    SegmentedButton<RimMaterial>(
-                      segments: RimMaterial.values.map((material) {
-                        return ButtonSegment(
-                          value: material,
-                          label: Text(material.displayName),
-                          icon: Icon(
-                            material == RimMaterial.carbon 
-                                ? Icons.fiber_smart_record 
-                                : Icons.circle_outlined,
-                          ),
-                        );
-                      }).toList(),
-                      selected: {_rimMaterial},
-                      onSelectionChanged: (Set<RimMaterial> newSelection) {
-                        setState(() {
-                          _rimMaterial = newSelection.first;
-                        });
-                      },
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<RimMaterial>(
+                        segments: RimMaterial.values.map((material) {
+                          return ButtonSegment(
+                            value: material,
+                            label: Text(material.displayName),
+                            icon: Icon(
+                              material == RimMaterial.carbon 
+                                  ? Icons.fiber_smart_record 
+                                  : Icons.circle_outlined,
+                            ),
+                          );
+                        }).toList(),
+                        selected: {_rimMaterial},
+                        onSelectionChanged: (Set<RimMaterial> newSelection) {
+                          setState(() {
+                            _rimMaterial = newSelection.first;
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Pneumatico Anteriore
             _buildTireSection(
-              'Pneumatico Anteriore',
+              'Front', // Titolo più breve
               Icons.arrow_upward,
               _frontTireController,
               _frontSize,
@@ -210,11 +217,11 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
               (setup) => setState(() => _frontSetup = setup),
               (pressure) => setState(() => _frontPressure = pressure),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Pneumatico Posteriore
             _buildTireSection(
-              'Pneumatico Posteriore',
+              'Rear', // Titolo più breve
               Icons.arrow_downward,
               _rearTireController,
               _rearSize,
@@ -226,32 +233,35 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Unità Pressione
+            // Unità Pressione - Card Standard
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Unità di Misura Pressione'),
+                    Text('Pressure Unit', style: textTheme.titleSmall),
                     const SizedBox(height: 12),
-                    SegmentedButton<PressureUnit>(
-                      segments: PressureUnit.values.map((unit) {
-                        return ButtonSegment(
-                          value: unit,
-                          label: Text(unit.displayName),
-                        );
-                      }).toList(),
-                      selected: {_pressureUnit},
-                      onSelectionChanged: (Set<PressureUnit> newSelection) {
-                        setState(() {
-                          // Converti le pressioni quando cambi unità
-                          final newUnit = newSelection.first;
-                          _frontPressure = _pressureUnit.convert(_frontPressure, newUnit);
-                          _rearPressure = _pressureUnit.convert(_rearPressure, newUnit);
-                          _pressureUnit = newUnit;
-                        });
-                      },
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<PressureUnit>(
+                        segments: PressureUnit.values.map((unit) {
+                          return ButtonSegment(
+                            value: unit,
+                            label: Text(unit.displayName),
+                          );
+                        }).toList(),
+                        selected: {_pressureUnit},
+                        onSelectionChanged: (Set<PressureUnit> newSelection) {
+                          setState(() {
+                            // Converti le pressioni quando cambi unità
+                            final newUnit = newSelection.first;
+                            _frontPressure = _pressureUnit.convert(_frontPressure, newUnit);
+                            _rearPressure = _pressureUnit.convert(_rearPressure, newUnit);
+                            _pressureUnit = newUnit;
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -263,12 +273,13 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
             FilledButton.icon(
               onPressed: _saveConfig,
               icon: const Icon(Icons.save),
-              label: const Text('Salva Configurazione'),
+              label: const Text('SAVE SETUP'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(16),
-                backgroundColor: const Color(0xFF00BCD4),
+                // Il colore background è gestito dal tema
               ),
             ),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -286,56 +297,86 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
     Function(TireSetup) onSetupChanged,
     Function(double) onPressureChanged,
   ) {
+    // Alias per comodità e pulizia
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, color: const Color(0xFF00BCD4)),
+            Icon(icon, color: colorScheme.primary),
             const SizedBox(width: 8),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: const Color(0xFF00BCD4),
+              style: textTheme.titleLarge?.copyWith(
+                color: colorScheme.primary,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
 
-        // Modello pneumatico
+        // Modello pneumatico - STILE AGGIORNATO
         TextField(
           controller: controller,
-          decoration: InputDecoration(
-            labelText: 'Modello Pneumatico',
-            hintText: 'es. Maxxis Minion DHF',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            prefixIcon: const Icon(Icons.tire_repair),
+          decoration: const InputDecoration(
+            labelText: 'Tire Model',
+            hintText: 'eg. Maxxis Minion',
+            prefixIcon: Icon(Icons.tire_repair),
           ),
         ),
         const SizedBox(height: 12),
 
-        // Dimensione
+        // Dimensione e Setup in una singola Card per pulizia visiva
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Dimensione'),
-                const SizedBox(height: 12),
-                SegmentedButton<double>(
-                  segments: const [
-                    ButtonSegment(value: 26.0, label: Text('26"')),
-                    ButtonSegment(value: 27.5, label: Text('27.5"')),
-                    ButtonSegment(value: 29.0, label: Text('29"')),
-                  ],
-                  selected: {size},
-                  onSelectionChanged: (Set<double> newSelection) {
-                    onSizeChanged(newSelection.first);
-                  },
+                // Dimensione
+                Text('Size', style: textTheme.titleSmall),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<double>(
+                    segments: const [
+                      ButtonSegment(value: 26.0, label: Text('26"')),
+                      ButtonSegment(value: 27.5, label: Text('27.5"')),
+                      ButtonSegment(value: 29.0, label: Text('29"')),
+                    ],
+                    selected: {size},
+                    onSelectionChanged: (Set<double> newSelection) {
+                      onSizeChanged(newSelection.first);
+                    },
+                  ),
+                ),
+                
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(), // Divisore sottile tra le opzioni
+                ),
+
+                // Setup
+                Text('Setup Type', style: textTheme.titleSmall),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<TireSetup>(
+                    segments: TireSetup.values.map((setupType) {
+                      return ButtonSegment(
+                        value: setupType,
+                        label: Text(setupType.displayName),
+                      );
+                    }).toList(),
+                    selected: {setup},
+                    onSelectionChanged: (Set<TireSetup> newSelection) {
+                      onSetupChanged(newSelection.first);
+                    },
+                  ),
                 ),
               ],
             ),
@@ -343,34 +384,7 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Setup
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Tipo Setup'),
-                const SizedBox(height: 12),
-                SegmentedButton<TireSetup>(
-                  segments: TireSetup.values.map((setupType) {
-                    return ButtonSegment(
-                      value: setupType,
-                      label: Text(setupType.displayName),
-                    );
-                  }).toList(),
-                  selected: {setup},
-                  onSelectionChanged: (Set<TireSetup> newSelection) {
-                    onSetupChanged(newSelection.first);
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Pressione
+        // Pressione - Card Separata per importanza
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -379,11 +393,11 @@ class _WheelConfigScreenState extends State<WheelConfigScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Pressione'),
+                    const Text('Pressure'),
                     Text(
                       '${pressure.toStringAsFixed(1)} ${_pressureUnit.displayName}',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: const Color(0xFF00BCD4),
+                      style: textTheme.titleMedium?.copyWith(
+                        color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

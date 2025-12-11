@@ -1,14 +1,10 @@
 class BikeConfig {
   final BikeType bikeType;
-  final double frontWheelSize;
-  final double rearWheelSize;
   final double? forkTravel; // mm
   final double? shockTravel; // mm
 
   BikeConfig({
     required this.bikeType,
-    required this.frontWheelSize,
-    required this.rearWheelSize,
     this.forkTravel,
     this.shockTravel,
   });
@@ -16,8 +12,6 @@ class BikeConfig {
   Map<String, dynamic> toJson() {
     return {
       'bike_type': bikeType.name,
-      'front_wheel_size': frontWheelSize,
-      'rear_wheel_size': rearWheelSize,
       if (forkTravel != null) 'fork_travel': forkTravel,
       if (shockTravel != null) 'shock_travel': shockTravel,
     };
@@ -29,8 +23,6 @@ class BikeConfig {
         (e) => e.name == json['bike_type'],
         orElse: () => BikeType.rigid,
       ),
-      frontWheelSize: json['front_wheel_size'] ?? 29.0,
-      rearWheelSize: json['rear_wheel_size'] ?? 29.0,
       forkTravel: json['fork_travel'],
       shockTravel: json['shock_travel'],
     );
@@ -45,8 +37,6 @@ class BikeConfig {
   }) {
     return BikeConfig(
       bikeType: bikeType ?? this.bikeType,
-      frontWheelSize: frontWheelSize ?? this.frontWheelSize,
-      rearWheelSize: rearWheelSize ?? this.rearWheelSize,
       forkTravel: forkTravel ?? this.forkTravel,
       shockTravel: shockTravel ?? this.shockTravel,
     );
@@ -63,7 +53,7 @@ extension BikeTypeExtension on BikeType {
   String get displayName {
     switch (this) {
       case BikeType.rigid:
-        return 'Rigida';
+        return 'Rigid';
       case BikeType.hardtail:
         return 'Hardtail';
       case BikeType.fullSuspension:

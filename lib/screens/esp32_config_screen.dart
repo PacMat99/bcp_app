@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/esp32_config.dart';
 import '../services/ble_service.dart';
+import '../theme/app_theme.dart';
 
 class Esp32ConfigScreen extends StatefulWidget {
   const Esp32ConfigScreen({super.key});
@@ -48,9 +49,9 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
       setState(() => _isSending = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('ESP32 non connesso'),
-            backgroundColor: Colors.orange,
+          SnackBar(
+            content: Text('ESP32 not connected'),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -65,9 +66,9 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(success 
-              ? 'Configurazione inviata con successo' 
-              : 'Errore invio configurazione'),
-          backgroundColor: success ? Colors.green : Colors.red,
+              ? 'Configuration sent successfully' 
+              : 'Sending configuration failed'),
+          backgroundColor: success ? AppTheme.success : Theme.of(context).colorScheme.error,
         ),
       );
       
@@ -79,9 +80,13 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Alias per scrivere meno codice e accedere ai colori del tema
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurazione ESP32'),
+        title: const Text('ESP32 Configuration'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -90,7 +95,7 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
           children: [
             // Header card
             Card(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              color: colorScheme.primaryContainer,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -98,7 +103,7 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                     Icon(
                       Icons.memory,
                       size: 48,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      color: colorScheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -107,8 +112,8 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                         children: [
                           Text(
                             'Hardware Setup',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: colorScheme.onPrimaryContainer,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -116,7 +121,7 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                           Text(
                             'ESP32-C6 Configuration',
                             style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                              color: colorScheme.onPrimaryContainer,
                             ),
                           ),
                         ],
@@ -130,12 +135,12 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
 
             // Info sensori connessi
             Text(
-              'Numero Sensori LSM6DSOX',
+              'Connected Sensors (LSM6DSOX)',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Specifica quanti sensori IMU sono fisicamente collegati all\'ESP32',
+              'Select how many IMU sensors should be managed by the system.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -143,111 +148,81 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
             const SizedBox(height: 16),
 
             // Selector sensori con card visuali
-            ...List.generate(4, (index) {
-              final count = index + 1;
+            ...[1, 2, 4].map((count) {
               final isSelected = _sensorCount == count;
               
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: isSelected 
-                        ? LinearGradient(
-                            colors: [
-                              const Color(0xFF9C27B0),
-                              const Color(0xFFE040FB),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: isSelected ? null : Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected 
-                          ? const Color(0xFFE040FB) 
-                          : Colors.transparent,
-                      width: 2,
-                    ),
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: const Color(0xFFE040FB).withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ] : null,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _sensorCount = count;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            // Icona sensori
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isSelected 
-                                    ? Colors.white.withValues(alpha: 0.2)
-                                    : Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.sensors,
-                                size: 32,
-                                color: isSelected 
-                                    ? Colors.white 
-                                    : Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            
-                            // Info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '$count Sensor${count > 1 ? 'i' : 'e'}',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected 
-                                          ? Colors.white 
-                                          : Theme.of(context).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _getSensorDescription(count),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: isSelected 
-                                          ? Colors.white.withValues(alpha: 0.8)
-                                          : Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            // Checkmark
-                            if (isSelected)
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                          ],
+              // Colore attivo: Tech Blue (Secondary del tema)
+              final activeColor = colorScheme.secondary;
+
+              return Card(
+                // SFONDO
+                color: isSelected ? activeColor.withValues(alpha: 0.05) : null,
+                
+                // BORDO
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: isSelected 
+        // Selezionato: Bordo colorato (Tech Blue) e più spesso (2px)
+        ? BorderSide(color: activeColor, width: 2) 
+        // Non selezionato: Bordo Grigio sottile (1px)
+        : BorderSide(color: colorScheme.outline.withValues(alpha: 0.3), width: 1),
+                ),
+                margin: const EdgeInsets.only(bottom: 12),
+                child: InkWell(
+                  onTap: () => setState(() => _sensorCount = count),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        // ICONA
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected 
+                                ? activeColor.withValues(alpha: 0.1) 
+                                : colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.sensors,
+                            size: 28,
+                            color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 16),
+                        
+                        // TESTI
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$count Sensor${count > 1 ? 's' : ''}',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? activeColor : colorScheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _getSensorDescription(count),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // CHECKMARK
+                        if (isSelected)
+                          Icon(
+                            Icons.check_circle,
+                            color: activeColor,
+                            size: 24,
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -269,25 +244,22 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                       ),
                     )
                   : const Icon(Icons.send),
-              label: Text(_isSending ? 'Invio in corso...' : 'Salva e Invia a ESP32'),
+              label: Text(_isSending ? 'SENDING...' : 'SAVE & SEND'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.all(16),
-                backgroundColor: const Color(0xFF9C27B0),
-                elevation: 8,
-                shadowColor: const Color(0xFFE040FB).withValues(alpha: 0.5),
               ),
             ),
-            
-            const SizedBox(height: 12),
-            
+
+            const SizedBox(height: 16),
+
             // Nota
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF00BCD4).withValues(alpha: 0.1),
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF00BCD4).withValues(alpha: 0.3),
+                  color: colorScheme.outlineVariant,
                 ),
               ),
               child: Row(
@@ -295,15 +267,14 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                   Icon(
                     Icons.info_outline,
                     size: 20,
-                    color: const Color(0xFF00BCD4),
+                    color: colorScheme.secondary, // Tech Blue
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'La configurazione verrà salvata e inviata all\'ESP32',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface,
+                      'This configuration will be saved locally and sent to the ESP32 immediately.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -319,13 +290,11 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
   String _getSensorDescription(int count) {
     switch (count) {
       case 1:
-        return 'Setup base - forcella anteriore';
+        return 'Basic setup - Handlebar only';
       case 2:
-        return 'Setup standard - forcella + ammortizzatore';
-      case 3:
-        return 'Setup avanzato - tripla telemetria';
+        return 'Standard setup - Handlebar + BB';
       case 4:
-        return 'Setup completo - massima precisione';
+        return 'Advanced setup - Handlebar + BB + F/R wheels';
       default:
         return '';
     }
