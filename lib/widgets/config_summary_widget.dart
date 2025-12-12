@@ -216,8 +216,9 @@ class _ConfigSummaryWidgetState extends State<ConfigSummaryWidget> {
   Widget _buildEsp32Content(Esp32Config config) {
     return Column(
       children: [
-        _buildRow('Connected Sensors', '${config.sensorCount}'),
         _buildRow('Board Type', 'ESP32-C6'),
+        _buildRow('Connected Sensors', '${config.sensorCount}'),
+        _buildRow('Recording frequency', '${config.sampleRate}'),
       ],
     );
   }

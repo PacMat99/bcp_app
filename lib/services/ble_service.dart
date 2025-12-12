@@ -55,7 +55,7 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
       await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
       await Future.delayed(const Duration(seconds: 10));
     } catch (e) {
-      debugPrint('Errore scan: $e');
+      debugPrint('Scan error: $e');
     } finally {
       _isScanning = false;
       notifyListeners();
@@ -114,7 +114,7 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
       notifyListeners();
       return true;
     } catch (e) {
-      debugPrint('Errore connessione: $e');
+      debugPrint('Connection error: $e');
       _isConnected = false;
       notifyListeners();
       return false;
@@ -139,12 +139,12 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
 
   // Comandi ESP32
   Future<void> _sendCommand(String command) async {
-    if (_txCharacteristic == null) throw Exception('Non connesso');
+    if (_txCharacteristic == null) throw Exception('Not connected');
     await _txCharacteristic!.write(utf8.encode(command));
   }
 
   Future<List<int>> _readResponse() async {
-    if (_rxCharacteristic == null) throw Exception('Non connesso');
+    if (_rxCharacteristic == null) throw Exception('Not connected');
     return await _rxCharacteristic!.read();
   }
 
@@ -160,7 +160,7 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
       
       return filesJson.map((json) => FileInfo.fromJson(json)).toList();
     } catch (e) {
-      debugPrint('Errore lista file: $e');
+      debugPrint('File list error: $e');
       return [];
     }
   }
@@ -187,7 +187,7 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
       
       return fileData;
     } catch (e) {
-      debugPrint('Errore download: $e');
+      debugPrint('Download error: $e');
       return null;
     }
   }
@@ -200,7 +200,7 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
       final response = await _readResponse();
       return utf8.decode(response).contains('OK');
     } catch (e) {
-      debugPrint('Errore eliminazione: $e');
+      debugPrint('Deleting error: $e');
       return false;
     }
   }
@@ -221,7 +221,7 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
 
       await _sendCommand('START_STREAM');
     } catch (e) {
-      debugPrint('Errore avvio stream: $e');
+      debugPrint('Start stream error: $e');
     }
   }
 
@@ -231,28 +231,31 @@ static const String CHARACTERISTIC_STREAM_UUID = "eb75be25-4d72-4f38-bf3a-942e17
       await _streamCharacteristic?.setNotifyValue(false);
       _streamSubscription?.cancel();
     } catch (e) {
-      debugPrint('Errore stop stream: $e');
+      debugPrint('Stop stream error: $e');
     }
   }
 
   // Invia configurazione sensori all'ESP32
-  Future<bool> sendSensorConfig(int sensorCount) async {
+  Future<bool> sendSensorConfig(int sensorCount, int sampleRate) async {
     try {
-      if (_txCharacteristic == null) throw Exception('Non connesso');
+      if (_txCharacteristic == null) throw Exception('Not connected');
       
-      // Formato comando: CONFIG:SENSORS:X dove X è il numero di sensori
-      final command = 'CONFIG:SENSORS:$sensorCount';
+      // NUOVO PROTOCOLLO: CONFIG:SENSORS:X:RATE:Y
+      // Esempio: "CONFIG:SENSORS:2:RATE:104"
+      final command = 'CONFIG:SENSORS:$sensorCount:RATE:$sampleRate';
+
+      debugPrint('Invio comando: $command');
       await _txCharacteristic!.write(utf8.encode(command));
-      
+
       // Attendi risposta
       await Future.delayed(const Duration(milliseconds: 300));
       final response = await _readResponse();
       final responseStr = utf8.decode(response);
       
-      debugPrint('Risposta ESP32: $responseStr');
+      debugPrint('ESP32 answer: $responseStr');
       return responseStr.contains('OK');
     } catch (e) {
-      debugPrint('Errore invio config: $e');
+      debugPrint('Sending configuration error: $e');
       return false;
     }
   }

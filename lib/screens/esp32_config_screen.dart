@@ -14,7 +14,8 @@ class Esp32ConfigScreen extends StatefulWidget {
 }
 
 class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
-  int _sensorCount = 2; // Default: 2 sensori
+  int _sensorCount = 2; 
+  int _sampleRate = 104; // Stato per la frequenza
   bool _isSending = false;
 
   @override
@@ -28,29 +29,34 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
     final configJson = prefs.getString('esp32_config');
     
     if (configJson != null) {
-      final config = Esp32Config.fromJson(jsonDecode(configJson));
-      setState(() {
-        _sensorCount = config.sensorCount;
-      });
+      try {
+        final config = Esp32Config.fromJson(jsonDecode(configJson));
+        setState(() {
+          _sensorCount = config.sensorCount;
+          _sampleRate = config.sampleRate; // Carica frequenza salvata
+        });
+      } catch (e) {
+        debugPrint("Errore lettura config: $e");
+      }
     }
   }
 
   Future<void> _saveAndSendConfig() async {
     setState(() => _isSending = true);
 
-    // Salva localmente
-    final config = Esp32Config(sensorCount: _sensorCount);
+    // 1. Salva localmente (entrambi i valori)
+    final config = Esp32Config(sensorCount: _sensorCount, sampleRate: _sampleRate);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('esp32_config', jsonEncode(config.toJson()));
 
-    // Invia all'ESP32
+    // 2. Invia all'ESP32
     final bleService = context.read<BleService>();
     if (!bleService.isConnected) {
       setState(() => _isSending = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('ESP32 not connected'),
+            content: const Text('ESP32 not connected'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -58,7 +64,8 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
       return;
     }
 
-    final success = await bleService.sendSensorConfig(_sensorCount);
+    // Chiama la nuova funzione con 2 parametri
+    final success = await bleService.sendSensorConfig(_sensorCount, _sampleRate);
 
     setState(() => _isSending = false);
 
@@ -80,7 +87,6 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Alias per scrivere meno codice e accedere ai colori del tema
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -93,7 +99,7 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header card
+            // HEADER
             Card(
               color: colorScheme.primaryContainer,
               child: Padding(
@@ -133,41 +139,34 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Info sensori connessi
+            // --- SEZIONE SENSORI ---
             Text(
-              'Connected Sensors (LSM6DSOX)',
+              'Connected Sensors',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Select how many IMU sensors should be managed by the system.',
+              'Select active IMU sensors.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Selector sensori con card visuali
+            // Selector sensori [1, 2, 4]
             ...[1, 2, 4].map((count) {
               final isSelected = _sensorCount == count;
-              
-              // Colore attivo: Tech Blue (Secondary del tema)
               final activeColor = colorScheme.secondary;
 
               return Card(
-                // SFONDO
                 color: isSelected ? activeColor.withValues(alpha: 0.05) : null,
-                
-                // BORDO
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                   side: isSelected 
-        // Selezionato: Bordo colorato (Tech Blue) e più spesso (2px)
-        ? BorderSide(color: activeColor, width: 2) 
-        // Non selezionato: Bordo Grigio sottile (1px)
-        : BorderSide(color: colorScheme.outline.withValues(alpha: 0.3), width: 1),
+                      ? BorderSide(color: activeColor, width: 2) 
+                      : BorderSide(color: colorScheme.outline.withValues(alpha: 0.3), width: 1),
                 ),
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 8),
                 child: InkWell(
                   onTap: () => setState(() => _sensorCount = count),
                   borderRadius: BorderRadius.circular(12),
@@ -175,7 +174,6 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        // ICONA
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -186,13 +184,11 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                           ),
                           child: Icon(
                             Icons.sensors,
-                            size: 28,
+                            size: 24,
                             color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        
-                        // TESTI
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +200,6 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                                   color: isSelected ? activeColor : colorScheme.onSurface,
                                 ),
                               ),
-                              const SizedBox(height: 4),
                               Text(
                                 _getSensorDescription(count),
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -214,14 +209,8 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
                             ],
                           ),
                         ),
-                        
-                        // CHECKMARK
                         if (isSelected)
-                          Icon(
-                            Icons.check_circle,
-                            color: activeColor,
-                            size: 24,
-                          ),
+                          Icon(Icons.check_circle, color: activeColor, size: 24),
                       ],
                     ),
                   ),
@@ -229,20 +218,89 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
               );
             }),
 
+            const SizedBox(height: 24),
+
+            // --- NUOVA SEZIONE: FREQUENZA DI CAMPIONAMENTO ---
+            Text(
+              'Sample Rate',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Higher frequency = More data precision and higher power consumption.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Selector Frequenza [104, 208] - LAYOUT ORIZZONTALE
+            Row(
+              children: [104, 208].map((rate) {
+                final isSelected = _sampleRate == rate;
+                // Usiamo il colore Terziario (Ciano) per distinguere questa sezione
+                final activeColor = colorScheme.tertiary; 
+
+                return Expanded(
+                  child: Card(
+                    color: isSelected ? activeColor.withValues(alpha: 0.05) : null,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: isSelected 
+                          ? BorderSide(color: activeColor, width: 2) 
+                          : BorderSide(color: colorScheme.outline.withValues(alpha: 0.3), width: 1),
+                    ),
+                    // Margine solo tra le due card
+                    margin: EdgeInsets.only(
+                      right: rate == 104 ? 8 : 0, 
+                      left: rate == 208 ? 8 : 0,
+                      bottom: 8
+                    ),
+                    child: InkWell(
+                      onTap: () => setState(() => _sampleRate = rate),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.speed, // Icona tachimetro
+                              color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
+                              size: 28,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '$rate Hz',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? activeColor : colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              rate == 104 ? 'Standard' : 'High Perf.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+
             const SizedBox(height: 32),
 
-            // Bottone Salva e Invia
+            // Bottone Salva
             FilledButton.icon(
               onPressed: _isSending ? null : _saveAndSendConfig,
               icon: _isSending 
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    ) 
                   : const Icon(Icons.send),
               label: Text(_isSending ? 'SENDING...' : 'SAVE & SEND'),
               style: FilledButton.styleFrom(
@@ -258,21 +316,15 @@ class _Esp32ConfigScreenState extends State<Esp32ConfigScreen> {
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: colorScheme.outlineVariant,
-                ),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: colorScheme.secondary, // Tech Blue
-                  ),
+                  Icon(Icons.info_outline, size: 20, color: colorScheme.secondary),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'This configuration will be saved locally and sent to the ESP32 immediately.',
+                      'Configuration is saved locally and sent to the connected ESP32.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
